@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+  <string id="30000">Higher Quality (700K) Stream</string>
+  <string id="30001">Override TV3 Folder Hierarchy</string>
+
+  <string id="30052">Categories</string>
+  <string id="30053">Channels</string>
+  <string id="30054">Genres</string>
+  <string id="30055">Shows</string>
+  <string id="30056">Latest</string>
+  <string id="30057">Most Watched</string>
+  <string id="30058">Expiring Soon</string>
+  <string id="30059">Comedy</string>
+  <string id="30060">Drama</string>
+  <string id="30061">News/Current Affairs</string>
+  <string id="30062">Reality</string>
+  <string id="30063">Sports</string>
+  <string id="30064">All</string>
+
+  <string id="30100">TV3</string>
+  <string id="30101">TVNZ</string>
+  <string id="30102">Ziln</string>
+</strings>
