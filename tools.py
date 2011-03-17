@@ -93,11 +93,12 @@ def addlistitems(infoarray, fanart = "fanart.jpg", folder = 0, path = ""):
   addlistitem(listitem, fanart, folder, total, path)
 
 def addlistitem(info, fanart = "fanart.jpg", folder = 0, total = 0, path = ""): #Add a list item (media file or folder) to the XBMC page
- import xbmcgui, xbmcplugin, os
+ import xbmcgui, xbmcplugin, xbmcaddon, os
  #if checkdict(info, ("Title", "Icon", "Thumb", "FileName")):
  if 1 <> 0:
   liz = xbmcgui.ListItem(info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
-  liz.setProperty('fanart_image', os.path.join(sys.path[0], fanart))
+  addon = xbmcaddon.Addon(id = sys.argv[0][9:-1])
+  liz.setProperty('fanart_image', os.path.join(addon.getAddonInfo('path'), fanart))
   liz.setInfo(type = "Video", infoLabels = info)
   if not folder:
    liz.setProperty("IsPlayable", "true")
