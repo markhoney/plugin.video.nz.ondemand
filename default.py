@@ -61,7 +61,8 @@ def INDEX():
  for index in channels:
   info = tools.defaultinfo(1)
   info["Title"] = channels[index]
-  info["Thumb"] = os.path.join(sys.path[0], "resources/images/%s.png" % channels[index])
+  addon = xbmcaddon.Addon(id = sys.argv[0][9:-1])
+  info["Thumb"] = os.path.join(addon.getAddonInfo('path'), "resources/images/%s.png" % channels[index])
   info["Count"] = int(index)
   info["FileName"] = "%s?ch=%s" % (sys.argv[0], channels[index])
   tools.addlistitem(info, "resources/images/%s.jpg" % channels[index], 1, count)
