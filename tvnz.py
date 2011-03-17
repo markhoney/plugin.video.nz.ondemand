@@ -33,14 +33,16 @@ def SHOW_LIST(id):
  for show in node.getElementsByTagName('Show'):
   se = re.search('/content/(.*)_(episodes|extras)_group/ps3_xml_skin.xml', show.attributes["href"].value)
   if se:
-   #videos = int(show.attributes["videos"].value)
-   #channel = show.attributes["channel"].value
-   info = tools.defaultinfo(1)
-   info["FileName"] = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0], se.group(1))
-   info["Title"] = show.attributes["title"].value
-   info["Count"] = count
-   count += 1
-   infoitems[info["Title"]] = info
+   if se.group(2) == "episodes":
+    #videos = int(show.attributes["videos"].value)
+    #channel = show.attributes["channel"].value
+    info = tools.defaultinfo(1)
+    info["FileName"] = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0], se.group(1))
+    info["Title"] = show.attributes["title"].value
+    info["Thumb"] = show.attributes["src"].value
+    info["Count"] = count
+    count += 1
+    infoitems[info["Title"]] = info
  tools.addlistitems(infoitems, FANART_URL, 1)
 
 
@@ -57,20 +59,21 @@ def SHOW_DISTRIBUTORS(id):
 
 def SHOW_EPISODES(id):
  try:
-  getEpisodes(id,"%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id,))
+  getEpisodes(id, "%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id))
  except:
   pass
  try:
   link = tools.gethtmlpage("%s/content/%s_extras_group/ps3_xml_skin.xml" % (BASE_URL, id[:-15]))
   node = minidom.parseString(link).documentElement
   if node:
-   url = "%s?ch=TVNZ&type=shows&id=%s_extras_group" % (sys.argv[0],id[:-15],)
-   liz=xbmcgui.ListItem('Extras', iconImage='DefaultFolder.png', thumbnailImage='')
-   xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz,isFolder=True)
+   info = tools.defaultinfo(1)
+   info["FileName"] = "%s?ch=TVNZ&type=shows&id=%s_extras_group" % (sys.argv[0], id[:-15])
+   info["Title"] = "Extras"
+   tools.addlistitem(info, FANART_URL, 1)
  except:
   return
 
-def getEpisodes(id,url):
+def getEpisodes(id, url):
  link = tools.gethtmlpage(url)
  node = minidom.parseString(link).documentElement
  for ep in node.getElementsByTagName('Episode'):
@@ -93,70 +96,77 @@ def getDate(str):
  # Dates are formatted like 23 Jan 2010.
  # Can't use datetime.strptime as that wasn't introduced until Python 2.6
  months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+ months2 = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
  str = str.encode('ascii', 'replace') # Part of the dates include the NO BREAK character \xA0 instead of a space
  str = str.replace("?", " ")
  parts = str.split(" ")
  if len(parts) == 3:
-  d = date(int(parts[2]), months.index(parts[1]) + 1, int(parts[0]))
-  return d.strftime("%d.%m.%Y")
+  if parts[1] in months:
+   month = months.index(parts[1])
+  elif parts[1] in months2:
+   month = months2.index(parts[1])
+  if month:
+   d = date(int(parts[2]), month + 1, int(parts[0]))
+   return d.strftime("%d.%m.%Y")
  return ""
 
 def getShow(show):
  se = re.search('/content/(.*)_(episodes|extras)_group/ps3_xml_skin.xml', show.attributes["href"].value)
  if se:
-  show_id = se.group(1)
-  title = show.attributes["title"].value
-  if "videos" in show.attributes.keys():
-   videos = int(show.attributes["videos"].value)
-  else:
-   videos = 0
+  info = tools.defaultinfo(1)
+  info["FileName"] = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0], se.group(1))
+  info["Title"] = show.attributes["title"].value
+  #if "videos" in show.attributes.keys():
+  # videos = int(show.attributes["videos"].value)
+  #else:
+  # videos = 0
   #channel = show.attributes["channel"].value
-  url = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0],show_id)
-  liz=xbmcgui.ListItem(title, iconImage="DefaultFolder.png", thumbnailImage="")
-  liz.setInfo( type='Video', infoLabels={ 'episode': videos, 'tvshowtitle': title, 'title': title } )
-  return(url,liz)
+  #url = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0],show_id)
+  tools.addlistitem(info, FANART_URL, 1)
 
 def getEpisode(ep):
- info = dict()
- info["tvshowtitle"] = ep.attributes["title"].value
- info["title"] = ep.attributes["sub-title"].value
+ info = tools.defaultinfo(0)
+ info["TVShowTitle"] = ep.attributes["title"].value
+ Title = ep.attributes["sub-title"].value
+ if Title <> "":
+  info["Title"] = Title
+ else:
+  info["Title"] = ep.attributes["episode"].value
  extra = string.split(ep.attributes["episode"].value,' | ')
  if len(extra) == 3:
   se = re.search('Series ([0-9]+), Episode ([0-9]+)', extra[0])
   if se:
-   info["season"] = int(se.group(1))
-   info["episode"] = int(se.group(2))
+   info["Season"] = int(se.group(1))
+   info["Episode"] = int(se.group(2))
   else:
-   info["season"] = 0
-   info["episode"] = 1
-  info["date"] = getDate(extra[1])
-  info["aired"] = extra[1]
-  info["duration"] = getDuration(extra[2])
+   info["Season"] = 0
+   info["Episode"] = 1
+  info["Date"] = getDate(extra[1])
+  info["Aired"] = extra[1]
+  info["Duration"] = getDuration(extra[2])
  elif len(extra) == 2:
-  info["duration"] = getDuration(extra[1])
+  info["Duration"] = getDuration(extra[1])
  elif len(extra) == 1:
-  info["duration"] = getDuration(extra[0])
+  info["Duration"] = getDuration(extra[0])
  #channel = ep.attributes["channel"].value
- thumb = ep.attributes["src"].value
+ info["Thumb"] = ep.attributes["src"].value
  se = re.search('/([0-9]+)/', ep.attributes["href"].value)
  if se:
   link = se.group(1)
-  if len(info["title"]):
-   label = "%s - \"%s\"" % (info["tvshowtitle"],info["title"],)
+  if len(info["Title"]):
+   label = "%s - \"%s\"" % (info["TVShowTitle"],info["Title"],)
   else:
-   label = info["tvshowtitle"]
-  info["title"] = label
+   label = info["TVShowTitle"]
+  info["Title"] = label
   if ep.firstChild:
-   info["plot"]=ep.firstChild.data
-  url = "%s?ch=TVNZ&type=video&id=%s" % (sys.argv[0],link)
-  liz = xbmcgui.ListItem(label, iconImage="DefaultVideo.png", thumbnailImage=thumb)
-  liz.setInfo( type="Video", infoLabels=info )
-  liz.setProperty("IsPlayable", "true")
-  return(url,liz)
+   info["Plot"]=ep.firstChild.data
+  info["FileName"] = "%s?ch=TVNZ&type=video&id=%s&info=%s" % (sys.argv[0], link, urllib.quote(str(info)))
+  return(info)
 
 def addEpisode(ep):
- url,liz = getEpisode(ep)
- xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz,isFolder=False)
+ #url,liz = getEpisode(ep)
+ #xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz,isFolder=False)
+ tools.addlistitem(getEpisode(ep), FANART_URL, 0)
 
 def getAdvert(chapter):
  advert = chapter.getElementsByTagName('ref')
@@ -169,23 +179,37 @@ def getAdvert(chapter):
    if flv.firstChild and len(flv.firstChild.wholeText):
     return(flv.firstChild.wholeText)
 
-def RESOLVE(id):
- link = tools.gethtmlpage("%s/content/%s/ta_ent_smil_skin.smil?platform=PS3" % (BASE_URL,id))
+def RESOLVE(id, info):
+ link = tools.gethtmlpage("%s/content/%s/ta_ent_smil_skin.smil?platform=PS3" % (BASE_URL, id))
  node = minidom.parseString(link).documentElement
  urls=list()
  for chapter in node.getElementsByTagName('seq'):
   # grab out the advert link
-  if addon.getSetting('showads') == 'true':
+  if addon.getSetting('tvnz_showads') == 'true':
    ad = getAdvert(chapter)
    if len(ad) > 0:
     urls.append(ad)
+  maxbitrate = 0
+  minbitrate = 9999999999
   for video in chapter.getElementsByTagName('video'):
-   url = video.attributes["src"].value
    bitrate = int(video.attributes["systemBitrate"].value)
-   if bitrate > MIN_BITRATE:
+   if bitrate > maxbitrate:
+    maxbitrate = bitrate
+   if bitrate < minbitrate:
+    minbitrate = bitrate
+  requiredbitrate = 700000 #Medium = 700000
+  if addon.getSetting('tvnz_quality') == "2": #High = 1500000
+   requiredbitrate = maxbitrate
+  elif addon.getSetting('tvnz_quality') == "0": #Low = 300000
+   requiredbitrate = minbitrate
+  for video in chapter.getElementsByTagName('video'):
+   bitrate = int(video.attributes["systemBitrate"].value)
+   if bitrate == requiredbitrate:
+    url = video.attributes["src"].value
     if url[:7] == 'http://':
      # easy case - we have an http URL
      urls.append(url)
+     sys.stderr.write("HTTP URL: " + url)
     elif url[:5] == 'rtmp:':
      # rtmp case
      rtmp_url = "rtmpe://fms-streaming.tvnz.co.nz/tvnz.co.nz"
@@ -194,25 +218,10 @@ def RESOLVE(id):
      swfverify = " swfurl=http://tvnz.co.nz/stylesheets/tvnz/entertainment/flash/ondemand/player.swf swfvfy=true"
      conn = " conn=S:-720"
      urls.append(rtmp_url + playpath + flashversion + swfverify + conn)
+     sys.stderr.write("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
+     #tools.message("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
  if len(urls) > 1:
-  uri = constructStackURL(urls)
+  uri = tools.constructStackURL(urls)
  elif len(urls) == 1:
   uri = urls[0]
- liz=xbmcgui.ListItem(path=uri)
- return(xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=liz))
-
-def constructStackURL(urls):
- uri = ""
- for url in urls:
-  url.replace(',',',,')
-  if len(uri)>0:
-   uri = uri + " , " + url
-  else:
-   uri = "stack://" + url
- return(uri)
-
-def addDir(name,type,id):
- u = "%s?ch=TVNZ&type=%s&id=%s" % (sys.argv[0],type,id,)
- liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage="")
- ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=True)
- return ok
+ tools.addlistitem(info, FANART_URL, 0, 1, uri)

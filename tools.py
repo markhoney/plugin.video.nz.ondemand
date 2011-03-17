@@ -84,7 +84,6 @@ def constructStackURL(playlist): #Build a URL stack from multiple URLs for the X
 
 def addlistitems(infoarray, fanart = "fanart.jpg", folder = 0, path = ""):
  total = len(infoarray)
- tools.message(total)
  #total = len(infoarray.viewkeys())
  i = 0
  #for listitem in infoarray:
@@ -103,10 +102,17 @@ def addlistitem(info, fanart = "fanart.jpg", folder = 0, total = 0, path = ""): 
   if not folder:
    liz.setProperty("IsPlayable", "true")
   if path == "":
-   xbmcplugin.addDirectoryItem(handle = int(sys.argv[1]), url = info["FileName"], listitem = liz, isFolder = folder, totalItems = total)
+   if xbmcplugin.addDirectoryItem(handle = int(sys.argv[1]), url = info["FileName"], listitem = liz, isFolder = folder, totalItems = total):
+    return 1
+   else:
+    return 0
   else:
    liz.setPath(path)
-   xbmcplugin.setResolvedUrl(handle = int(sys.argv[1]), succeeded = True, listitem = liz)
+   try:
+    xbmcplugin.setResolvedUrl(handle = int(sys.argv[1]), succeeded = True, listitem = liz)
+   except:
+    message("Boo, couldn't play.")
+    
 
 
 def addsorting(methods, mediacontent = ""):

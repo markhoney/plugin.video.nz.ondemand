@@ -20,7 +20,8 @@ tv3_urls["VIDEO4"] = 'Default.aspx'
 tv3_urls["FEEDBURNER_RE"] = '//feedproxy\.google\.com/'
 tv3_urls["CAT"] = '/default404.aspx?tabid='
 tv3_urls["CAT_RE"] = '/default404\.aspx\?tabid='
-tv3_urls["IMG_RE"] = '\.ondemand\.tv3\.co\.nz/Portals/0-Articles/'
+tv3_urls["IMG_RE"] = '\.ondemand\.tv3\.co\.nz/Portals/0/AM/'
+tv3_urls["IMG_RE2"] = '\.ondemand\.tv3\.co\.nz/Portals/0-Articles/'
 tv3_urls["Fanart"] = 'resources/images/TV3.jpg'
 
 
@@ -61,7 +62,8 @@ def dateduration(ad): #Search a tag for aired date and video duration
 
 
 def base_url(provider): #Build a base website URL for a given site (c4tv or tv3)
- return "%s.%s.%s" % (tv3_urls["BASE1"], provider, tv3_urls["BASE2"])
+ #return "%s.%s.%s" % (tv3_urls["BASE1"], provider, tv3_urls["BASE2"])
+ return "%s.%s.%s" % (tv3_urls["BASE1"], 'tv3', tv3_urls["BASE2"])
 
 def rtmp(provider): #Build an RTMP URL for a given site (c4tv or tv3)
  if provider == "c4tv":
@@ -95,7 +97,7 @@ def INDEX_FOLDER(folder): #Create second level folder for the hierarchy view, on
  infopages["2"]  = ("64", localize(30052), "tv3", localize(30058)) # Expiring soon
  infopages["3"]  = ("70", localize(30052), "atoz", "A - Z")
  infopages["4"]  = ("71", localize(30053), "tv3", "TV3")
- infopages["5"]  = ("72", localize(30053), "c4tv", "C4")
+ infopages["5"]  = ("72", localize(30053), "c4tv", "FOUR")
  infopages["6"]  = ("65", localize(30054), "tv3", localize(30059)) # Comedy
  infopages["7"]  = ("66", localize(30054), "tv3", localize(30060)) # Drama
  infopages["8"]  = ("67", localize(30054), "tv3", localize(30061)) # News/Current affairs
@@ -132,7 +134,8 @@ def INDEX(provider): #Create a list of top level folders as scraped from TV3's w
      cat = "atoz"
     elif info["Title"] == "TV3 Shows":
      cat = "tv3"
-    elif info["Title"] == "C4TV Shows":
+    #elif info["Title"] == "C4TV Shows":
+    elif info["Title"] == "FOUR Shows":
      cat = "c4tv"
     else:
      cat = "tv"
@@ -187,6 +190,7 @@ def add_item_div(soup, provider, count): #Scrape items from a div-style HTML pag
  baseurl = base_url(provider)
  info = tools.defaultinfo()
  info["Studio"] = provider
+ sys.stderr.write(baseurl)
  link = soup.find("a", attrs={"href": re.compile(baseurl)})
  if link:
   href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, tv3_urls["VIDEO1"], tv3_urls["VIDEO2"], tv3_urls["VIDEO3"]), link['href'])
@@ -276,7 +280,9 @@ def add_item_atoz(soup, provider, count): #Scrape items from an AtoZ-style HTML 
     title = link.string.strip()
     if title <> "":
      info["TVShowTitle"] = title
-     info.update(tools.imageinfo(soup.find("img", attrs={"src": re.compile(tv3_urls["IMG_RE"]), "title": True})))
+     image = soup.find("img", attrs={"src": re.compile(tv3_urls["IMG_RE2"]), "title": True})
+     if image:
+      info.update(tools.imageinfo(image))
      info.update(seasonepisode(soup.contents[4]))
      info["Title"] = tools.itemtitle(info["TVShowTitle"], info["PlotOutline"])
      plot = soup.find("span", attrs={"class": "lite"})
@@ -379,7 +385,8 @@ def SHOW_ATOZ(catid, provider): #Show video items from an AtoZ style TV3 webpage
 def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RTMP URL from the info in the page, then play the URL
  ids = id.split(",")
  if len(ids) == 4:
-  doc = tools.gethtmlpage("%s/%s/%s/%s/%s/%s/%s/%s/%s" % (base_url(info["Studio"]), ids[0], tv3_urls["VIDEO1"], ids[1], tv3_urls["VIDEO2"], ids[2], tv3_urls["VIDEO3"], ids[3], tv3_urls["VIDEO4"]))
+  pageUrl = "%s/%s/%s/%s/%s/%s/%s/%s/%s" % (base_url(info["Studio"]), ids[0], tv3_urls["VIDEO1"], ids[1], tv3_urls["VIDEO2"], ids[2], tv3_urls["VIDEO3"], ids[3], tv3_urls["VIDEO4"])
+  doc = tools.gethtmlpage(pageUrl)
  else:
   doc = tools.gethtmlpage("id")
  if doc:
@@ -389,16 +396,42 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
    #videoplayer = re.search('var fo = new FlashObject\("(http://static.mediaworks.co.nz/(.*?).swf)', doc)
    videoplayer = re.search('swfobject.embedSWF\("(http://static.mediaworks.co.nz/(.*?).swf)', doc)
    if videoplayer:
+    auth = re.search('random_num = "([0-9]+)";', doc)
+    site = re.search("var pageloc='TV-(FOUR|TV3)-Video-OnDemand-", doc)
+    if site.group(1) == 'TV3':
+     realstudio = 'tv3'
+    else:
+     realstudio = 'c4'
     playlist=list()
-    #if addon.getSetting('advert') == 'true':
+    #if addon.getSetting('tv3_showads') == 'true':
      #playlist.append(ad)
-    quality = "330K"
-    if addon.getSetting('hq') == 'true':
-     quality = "700K"
-    rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
+    if re.search('flashvars.fifteenHundred = "yes";', doc):
+     LowQuality = "330K"
+     MediumQuality = "700K"
+     HighQuality = "1500K"
+    elif re.search('flashvars.sevenHundred = "yes";', doc):
+     LowQuality = "128K"
+     MediumQuality = "330K"
+     HighQuality = "700K"
+	#elif re.search('flashvars.highEnd = "true";', doc):
+    quality = HighQuality
+    quality2 = MediumQuality
+    quality3 = LowQuality
+    if addon.getSetting('tv3_quality') == "0": #Low
+     quality = LowQuality
+     quality3 = HighQuality
+    elif addon.getSetting('tv3_quality') == "1": #Medium
+     quality = MediumQuality
+     quality2 = HighQuality
+    #rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
+    rtmpurl = '%s%s/%s/%s_%s' % (rtmp(realstudio), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
     sys.stderr.write("RTMP URL: %s" % (rtmpurl))
-    swfverify = ' swfUrl=%s swfVfy=true' % (videoplayer.group(1))
-    sys.stderr.write("Flash Player: %s" % (videoplayer.group(1)))
+    #swfverify = ' swfUrl=%s swfVfy=true' % (videoplayer.group(1))
+    if auth:
+     swfverify = ' swfUrl=%s?rnd=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), auth.group(1), pageUrl)
+    else:
+     swfverify = ' swfUrl=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), pageUrl)
+    #sys.stderr.write("Flash Player: %s" % (videoplayer.group(1)))
     playlist.append(rtmpurl + swfverify)
     if len(playlist) > 1:
      uri = constructStackURL(playlist)

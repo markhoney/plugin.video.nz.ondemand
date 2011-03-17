@@ -1,5 +1,5 @@
 import tools, urllib, string, re, sys, time, xbmcaddon, xbmcgui, xbmcplugin
-from BeautifulSoup import BeautifulSoup, SoupStrainer
+from BeautifulSoup import BeautifulSoup, SoupStrainer, BeautifulStoneSoup
 from xml.dom import minidom
 
 ziln_urls = dict()
@@ -86,6 +86,7 @@ def PROGRAMMES(type, urlext):
          info["Title"] = listitem.p.string.strip()
         else:
          info["Title"] = link.img["alt"]
+         #info["Title"] = listitem.find('p').contents[0]
         info["Thumb"] = "%s/%s" % (ziln_urls["ZILN"], link.img["src"])
         info["Count"] = count
         count += 1
@@ -97,9 +98,17 @@ def PROGRAMMES(type, urlext):
 def RESOLVE(index): #, info
  doc = tools.gethtmlpage("%s/playlist/null/%s" % (ziln_urls["ZILN"], index))
  if doc:
-  uri = "%s%s" % (ziln_urls["ZILN"], minidom.parseString(doc).documentElement.getElementsByTagName("media:content")[0].attributes["url"].value)
-  liz=xbmcgui.ListItem(path=uri)
-  return(xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=liz))
+  soup = BeautifulStoneSoup(doc)
+  #tools.message(soup.find('media:content')["url"])
+  #minidom.parseString(doc).documentElement.getElementsByTagName("media:content")[0].attributes["url"].value
+  info = tools.defaultinfo(0)
+  info["Title"] = soup.find('item').title.contents[0]
+  info["Thumb"] = soup.find('jwplayer:image').contents[0]
+  info["Plot"] = soup.find('description').contents[0]
+  uri = "%s%s" % (ziln_urls["ZILN"], soup.find('media:content')["url"])
+  tools.addlistitem(info, ziln_urls["Fanart"], 0, 1, uri)
+  #liz=xbmcgui.ListItem(path=uri)
+  #return(xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=liz))
   #dom.getElementsByTagName("title")[0]
   #dom.getElementsByTagName("title")[1]
   #dom.getElementsByTagName("jwplayer:image")[0]

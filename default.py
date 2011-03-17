@@ -117,7 +117,7 @@ if params:
     tvnz.SHOW_DISTRIBUTORS(params["id"][0])
     tools.addsorting(["label"], "tvshows")
    elif params["type"][0] == "video":
-    tvnz.RESOLVE(params["id"][0])
+    tvnz.RESOLVE(params["id"][0], eval(urllib.unquote(params["info"][0])))
   else:
    tvnz.INDEX()
    tools.addsorting(["label"])
