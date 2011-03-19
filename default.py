@@ -57,6 +57,7 @@ def INDEX():
  channels["0"] = "TV3"
  channels["1"] = "TVNZ"
  channels["2"] = "Ziln"
+ #channels["3"] = "iSKY"
  count = len(channels)
  for index in channels:
   info = tools.defaultinfo(1)
@@ -133,6 +134,8 @@ if params:
   else:
    ziln.INDEX("channel", "")
    tools.addsorting(["label"])
+ elif params["ch"][0] == "iSKY":
+  import isky
  else:
   sys.stderr.write("Invalid Channel ID")
 else:

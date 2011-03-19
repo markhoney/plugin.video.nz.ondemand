@@ -405,15 +405,25 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
     playlist=list()
     #if addon.getSetting('tv3_showads') == 'true':
      #playlist.append(ad)
-    if re.search('flashvars.fifteenHundred = "yes";', doc):
+    fifteen = re.search('flashvars.fifteenHundred = "yes";', doc)
+    seven = re.search('flashvars.sevenHundred = "yes";', doc)
+    if fifteen and seven:
      LowQuality = "330K"
      MediumQuality = "700K"
      HighQuality = "1500K"
-    elif re.search('flashvars.sevenHundred = "yes";', doc):
+    elif fifteen:
+     LowQuality = "128K"
+     MediumQuality = "330K"
+     HighQuality = "1500K"
+    elif seven:
      LowQuality = "128K"
      MediumQuality = "330K"
      HighQuality = "700K"
-	#elif re.search('flashvars.highEnd = "true";', doc):
+    else:
+     LowQuality = "128K"
+     MediumQuality = "330K"
+     HighQuality = "330K"
+    #elif re.search('flashvars.highEnd = "true";', doc):
     quality = HighQuality
     quality2 = MediumQuality
     quality3 = LowQuality

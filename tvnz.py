@@ -39,7 +39,6 @@ def SHOW_LIST(id):
     info = tools.defaultinfo(1)
     info["FileName"] = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0], se.group(1))
     info["Title"] = show.attributes["title"].value
-    info["Thumb"] = show.attributes["src"].value
     info["Count"] = count
     count += 1
     infoitems[info["Title"]] = info
