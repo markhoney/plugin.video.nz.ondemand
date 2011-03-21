@@ -13,7 +13,7 @@
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="en">NZ OnDemand</summary>
-    <description lang="en">New Zealand TV3/C4, TVNZ and Ziln OnDemand Videos.</description>
+    <description lang="en">New Zealand TV3/C4, TVNZ and Ziln OnDemand videos, along with Shine and Parliament TV streaming video.</description>
     <disclaimer lang="en">Some parts of this addon may not be legal in your country of residence - please check with your local laws.</disclaimer>
   </extension>
 </addon>
