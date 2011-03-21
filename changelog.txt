@@ -2,6 +2,8 @@
 - Added Parliament TV live stream
 - Added Shine TV live stream (although the streaming service is inactive at the moment)
 - New logo, courtesy of Freezy
+
+[B]1.2.1[/B]
 - Fixed TVNZ's All Shows Category
 
 [B]1.2.0[/B]
