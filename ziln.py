@@ -50,7 +50,7 @@ def INDEX(type, urlext):
         channelurl = re.search("assets/images/%ss/([0-9]*?)-mini.jpg" % type, link.img["src"]).group(1)
         #infourl = "&info=%s" % urllib.quote(str(info))
         info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
-        tools.addlistitem(info, ziln_urls["Fanart"], folder)
+        tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], folder)
   else:
    sys.stderr.write("Couldn't find any programs")
  else:
@@ -93,7 +93,7 @@ def PROGRAMMES(type, urlext):
         channelurl = re.search("/%s/(.*)" % type, link["href"]).group(1)
 		#infourl = "&info=%s" % urllib.quote(str(info))
         info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
-        tools.addlistitem(info, ziln_urls["Fanart"], folder)
+        tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], folder)
 
 def RESOLVE(index): #, info
  doc = tools.gethtmlpage("%s/playlist/null/%s" % (ziln_urls["ZILN"], index))
@@ -106,7 +106,7 @@ def RESOLVE(index): #, info
   info["Thumb"] = soup.find('jwplayer:image').contents[0]
   info["Plot"] = soup.find('description').contents[0]
   uri = "%s%s" % (ziln_urls["ZILN"], soup.find('media:content')["url"])
-  tools.addlistitem(info, ziln_urls["Fanart"], 0, 1, uri)
+  tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], 0, 1, uri)
   #liz=xbmcgui.ListItem(path=uri)
   #return(xbmcplugin.setResolvedUrl(handle=int(sys.argv[1]), succeeded=True, listitem=liz))
   #dom.getElementsByTagName("title")[0]

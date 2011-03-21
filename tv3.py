@@ -1,3 +1,7 @@
+# 3 News
+# mms://content.mediaworks.co.nz/tv/News/TOPSTORIES.300k
+
+
 import tools, urllib, string, re, sys, time, xbmcaddon
 from BeautifulSoup import BeautifulSoup, SoupStrainer
 
@@ -50,9 +54,9 @@ def dateduration(ad): #Search a tag for aired date and video duration
   info = dict()
   aired = re.search("([0-9]{2}/[0-9]{2}/[0-9]{2})", ad.contents[1])
   if aired:
-   #info["Aired"] = time.strftime("%Y-%m-%d", time.strptime(aired.group(1),"%d/%m/%y"))
-   info["Aired"] = tools.xbmcdate(aired.group(1))
-   info["Date"] = info["Aired"]
+   #info["Premiered"] = time.strftime("%Y-%m-%d", time.strptime(aired.group(1),"%d/%m/%y"))
+   info["Premiered"] = tools.xbmcdate(aired.group(1))
+   info["Date"] = info["Premiered"]
    #info["Year"] = int(time.strftime("%Y", info["Aired"]))
   duration = re.search("\(([0-9]+:[0-9]{2})\)", ad.contents[1])
   if duration:
@@ -88,7 +92,7 @@ def INDEX_FOLDERS(): #Create a list of top level folders for the hierarchy view
   info["Title"] = folders[index]
   info["Count"] = int(index)
   info["FileName"] = "%s?ch=TV3&folder=%s" % (sys.argv[0], folders[index])
-  tools.addlistitem(info, tv3_urls["Fanart"], 1, count)
+  tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 1, count)
 
 def INDEX_FOLDER(folder): #Create second level folder for the hierarchy view, only showing items for the selected top level folder
  infopages = dict()
@@ -113,7 +117,7 @@ def INDEX_FOLDER(folder): #Create second level folder for the hierarchy view, on
    info["Title"] = infopages[index][3]
    info["Count"] = int(index)
    info["FileName"] = "%s?ch=TV3&cat=%s&catid=%s" % (sys.argv[0], infopages[index][2], infopages[index][0])
-   tools.addlistitem(info, tv3_urls["Fanart"], 1)
+   tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 1)
  if folder == "Shows":
   INDEX_SHOWS("tv3")
 
@@ -143,7 +147,7 @@ def INDEX(provider): #Create a list of top level folders as scraped from TV3's w
      info["Count"] = count
      count += 1
      info["FileName"] = "%s?ch=TV3&cat=%s&catid=%s" % (sys.argv[0], cat, catid)
-     tools.addlistitem(info, tv3_urls["Fanart"], 1)
+     tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 1)
   else:
    sys.stderr.write("Couldn't find any categories")
  else:
@@ -169,7 +173,7 @@ def INDEX_SHOWS(provider): #Create a second level list of TV Shows from a TV3 we
       info["FileName"] = "%s?ch=TV3&cat=%s&title=%s&catid=%s" % (sys.argv[0], "shows", urllib.quote(info["Title"]), urllib.quote(catid))
      info["Count"] = count
      count += 1
-     tools.addlistitem(info, tv3_urls["Fanart"], 1)
+     tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 1)
    else:
     sys.stderr.write("Couldn't find any videos in list")
   else:
@@ -215,7 +219,7 @@ def add_item_div(soup, provider, count): #Scrape items from a div-style HTML pag
       if plot.strip() <> "":
        info["Plot"] = tools.unescape(plot.strip())
      info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
-     tools.addlistitem(info, tv3_urls["Fanart"], 0)
+     tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
 
 def add_item_show(soup, provider, count, title): #Scrape items from a show-style HTML page
  info = tools.defaultinfo()
@@ -247,7 +251,7 @@ def add_item_show(soup, provider, count, title): #Scrape items from a show-style
        info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
      elif urltype == "other":
       info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], urllib.quote(link["href"]), urllib.quote(str(info)))
-     tools.addlistitem(info, tv3_urls["Fanart"], 0)
+     tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
 
 def add_item_table(soup, provider, count, title): #Scrape items from a table-style HTML page
  info = tools.defaultinfo()
@@ -265,7 +269,7 @@ def add_item_table(soup, provider, count, title): #Scrape items from a table-sty
     href = re.search("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (base_url("tv3"), tv3_urls["VIDEO1"], tv3_urls["VIDEO2"], tv3_urls["VIDEO3"]), link['href'])
     if href:
      info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
-    tools.addlistitem(info, tv3_urls["Fanart"], 0)
+    tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
 
 def add_item_atoz(soup, provider, count): #Scrape items from an AtoZ-style HTML page
  baseurl = base_url(provider)
@@ -293,7 +297,7 @@ def add_item_atoz(soup, provider, count): #Scrape items from an AtoZ-style HTML 
      info["Count"] = count
      info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
      infoitems[info["Title"]] = info
-     #tools.addlistitem(info, tv3_urls["Fanart"], 0)
+     #tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
   tools.addlistitems(infoitems, tv3_urls["Fanart"], 0)
 
 
@@ -403,7 +407,7 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
     else:
      realstudio = 'c4'
     playlist=list()
-    #if addon.getSetting('tv3_showads') == 'true':
+    #if addon.getSetting('TV3_showads') == 'true':
      #playlist.append(ad)
     fifteen = re.search('flashvars.fifteenHundred = "yes";', doc)
     seven = re.search('flashvars.sevenHundred = "yes";', doc)
@@ -427,10 +431,10 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
     quality = HighQuality
     quality2 = MediumQuality
     quality3 = LowQuality
-    if addon.getSetting('tv3_quality') == "0": #Low
+    if addon.getSetting('TV3_quality') == "Low":
      quality = LowQuality
      quality3 = HighQuality
-    elif addon.getSetting('tv3_quality') == "1": #Medium
+    elif addon.getSetting('TV3_quality') == "Medium":
      quality = MediumQuality
      quality2 = HighQuality
     #rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
@@ -453,7 +457,7 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
     #liz.setPath(uri)
     #xbmcplugin.setResolvedUrl(handle = int(sys.argv[1]), succeeded = True, listitem = liz)
     info["FileName"] = rtmpurl
-    tools.addlistitem(info, tv3_urls["Fanart"], 0, 1, uri)
+    tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0, 1, uri)
    else:
     sys.stderr.write("Couldn't get video player URL")
   else:

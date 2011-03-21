@@ -7,6 +7,7 @@
   <string id="30011">Low</string>
   <string id="30012">Medium</string>
   <string id="30013">High</string>
+  <string id="30014">Stream Type</string>
 
   <string id="30052">Categories</string>
   <string id="30053">Channels</string>
@@ -27,4 +28,6 @@
   <string id="30102">TVNZ</string>
   <string id="30103">Ziln</string>
   <string id="30104">iSky</string>
+  <string id="30105">Parliament</string>
+  <string id="30106">Shine</string>
 </strings>

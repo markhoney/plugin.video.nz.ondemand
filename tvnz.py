@@ -22,7 +22,7 @@ def INDEX():
     info["Count"] = count
     count += 1
     info["FileName"] = "%s?ch=TVNZ&type=%s&id=%s" % (sys.argv[0], type, m.group(1))
-    tools.addlistitem(info, FANART_URL, 1)
+    tools.addlistitem(int(sys.argv[1]), info, FANART_URL, 1)
 
 def SHOW_LIST(id):
  link = tools.gethtmlpage("%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id))
@@ -42,7 +42,7 @@ def SHOW_LIST(id):
     info["Count"] = count
     count += 1
     infoitems[info["Title"]] = info
- tools.addlistitems(infoitems, FANART_URL, 1)
+ tools.addlistitems(int(sys.argv[1]), infoitems, FANART_URL, 1)
 
 
 def SHOW_DISTRIBUTORS(id):
@@ -68,7 +68,7 @@ def SHOW_EPISODES(id):
    info = tools.defaultinfo(1)
    info["FileName"] = "%s?ch=TVNZ&type=shows&id=%s_extras_group" % (sys.argv[0], id[:-15])
    info["Title"] = "Extras"
-   tools.addlistitem(info, FANART_URL, 1)
+   tools.addlistitem(int(sys.argv[1]), info, FANART_URL, 1)
  except:
   return
 
@@ -121,7 +121,7 @@ def getShow(show):
   # videos = 0
   #channel = show.attributes["channel"].value
   #url = "%s?ch=TVNZ&type=singleshow&id=%s_episodes_group" % (sys.argv[0],show_id)
-  tools.addlistitem(info, FANART_URL, 1)
+  tools.addlistitem(int(sys.argv[1]), info, FANART_URL, 1)
 
 def getEpisode(ep):
  info = tools.defaultinfo(0)
@@ -141,7 +141,7 @@ def getEpisode(ep):
    info["Season"] = 0
    info["Episode"] = 1
   info["Date"] = getDate(extra[1])
-  info["Aired"] = extra[1]
+  info["Premiered"] = extra[1]
   info["Duration"] = getDuration(extra[2])
  elif len(extra) == 2:
   info["Duration"] = getDuration(extra[1])
@@ -165,7 +165,7 @@ def getEpisode(ep):
 def addEpisode(ep):
  #url,liz = getEpisode(ep)
  #xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz,isFolder=False)
- tools.addlistitem(getEpisode(ep), FANART_URL, 0)
+ tools.addlistitem(int(sys.argv[1]), getEpisode(ep), FANART_URL, 0)
 
 def getAdvert(chapter):
  advert = chapter.getElementsByTagName('ref')
@@ -184,7 +184,7 @@ def RESOLVE(id, info):
  urls=list()
  for chapter in node.getElementsByTagName('seq'):
   # grab out the advert link
-  if addon.getSetting('tvnz_showads') == 'true':
+  if addon.getSetting('TVNZ_showads') == 'true':
    ad = getAdvert(chapter)
    if len(ad) > 0:
     urls.append(ad)
@@ -197,9 +197,9 @@ def RESOLVE(id, info):
    if bitrate < minbitrate:
     minbitrate = bitrate
   requiredbitrate = 700000 #Medium = 700000
-  if addon.getSetting('tvnz_quality') == "2": #High = 1500000
+  if addon.getSetting('TVNZ_quality') == "High": #High = 1500000
    requiredbitrate = maxbitrate
-  elif addon.getSetting('tvnz_quality') == "0": #Low = 300000
+  elif addon.getSetting('TVNZ_quality') == "Low": #Low = 300000
    requiredbitrate = minbitrate
   for video in chapter.getElementsByTagName('video'):
    bitrate = int(video.attributes["systemBitrate"].value)
@@ -218,9 +218,8 @@ def RESOLVE(id, info):
      conn = " conn=S:-720"
      urls.append(rtmp_url + playpath + flashversion + swfverify + conn)
      sys.stderr.write("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
-     #tools.message("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
  if len(urls) > 1:
   uri = tools.constructStackURL(urls)
  elif len(urls) == 1:
   uri = urls[0]
- tools.addlistitem(info, FANART_URL, 0, 1, uri)
+ tools.addlistitem(int(sys.argv[1]), info, FANART_URL, 0, 1, uri)
