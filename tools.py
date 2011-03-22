@@ -13,10 +13,14 @@ def message(message, title = "Warning"): #Show an on-screen message (useful for 
  else:
   dialog.ok("Message", "No message text")
 
-def gethtmlpage(url): #Grab an HTML page
+def gethtmlpage(url, useragent = "ie9"): #Grab an HTML page
  import urllib2
  sys.stderr.write("Requesting page: %s" % (url))
  req = urllib2.Request(url)
+ newheader = 'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)'
+ if useragent == "ps3":
+  newheader = 'Mozilla/5.0 (PLAYSTATION 3; 3.55)'
+ req.add_header('User-agent', newheader)
  response = urllib2.urlopen(req)
  doc = response.read()
  response.close()

@@ -9,7 +9,21 @@ ziln_urls["RTMP2"] = 'ecast'
 ziln_urls["RTMP3"] = 'mp4:/ziln'
 ziln_urls["Fanart"] = 'resources/images/Ziln.jpg'
 
-def INDEX(type, urlext):
+def INDEX():
+ info = tools.defaultinfo(1)
+ info["Title"] = "Channels"
+ info["Count"] = 1
+ #info["Thumb"] = "DefaultVideoPlaylists.png"
+ info["FileName"] = "%s?ch=Ziln&folder=channels" % sys.argv[0]
+ tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], 1)
+ info = tools.defaultinfo(1)
+ info["Title"] = "Search"
+ info["Count"] = 2
+ info["Thumb"] = "DefaultVideoPlaylists.png"
+ info["FileName"] = "%s?ch=Ziln&folder=search" % sys.argv[0]
+ tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], 1)
+
+def PROGRAMMES(type, urlext):
  if type == "channel":
   folder = 1
   url = ziln_urls["ZILN"]
@@ -17,9 +31,12 @@ def INDEX(type, urlext):
   folder = 0
   #url = "%s/channel/%s" % (ziln_urls["ZILN"], urlext)
   url = "%s/assets/php/slider.php?channel=%s" % (ziln_urls["ZILN"], urlext)
+ elif type == "search":
+  folder = 0
+  url = "%s/search?search_keyword=%s" % (ziln_urls["ZILN"], urlext.replace(" ", "+"))
  doc = tools.gethtmlpage(url)
  if doc:
-  if type == "channel":
+  if type == "channel" or type == "search":
    div_tag = SoupStrainer('div')
    html_divtag = BeautifulSoup(doc, parseOnlyThese = div_tag)
    programmes = html_divtag.findAll(attrs={'class' : 'programmes'})
@@ -27,73 +44,47 @@ def INDEX(type, urlext):
    div_tag = SoupStrainer('body')
    html_divtag = BeautifulSoup(doc, parseOnlyThese = div_tag)
    programmes = html_divtag.findAll(attrs={'class' : 'slider slider-small'})
+  if type == "search":
+   type = "video"
   if len(programmes) > 0:
    for programme in programmes:
     list = programme.find('ul')
-    listitems = list.findAll('li')
-    if len(listitems) > 0:
-     count = 0
-     for listitem in listitems:
-      link = listitem.find('a', attrs={'href' : re.compile("^/%s/" % type)})
-      if link.img:
-       if re.search("assets/images/%ss/" % type, link.img["src"]):
-        info = tools.defaultinfo(1)
-        #info["Title"] = link.img["alt"]
-        if listitem.p.string:
-         info["Title"] = listitem.p.string.strip()
-        else:
-         info["Title"] = link.img["alt"]
-        info["Thumb"] = "%s/%s" % (ziln_urls["ZILN"], link.img["src"])
-        info["Count"] = count
-        count += 1
-        #channelurl = re.search("/%s/(.*)" % type, link["href"]).group(1)
-        channelurl = re.search("assets/images/%ss/([0-9]*?)-mini.jpg" % type, link.img["src"]).group(1)
-        #infourl = "&info=%s" % urllib.quote(str(info))
-        info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
-        tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], folder)
+    if list:
+     listitems = list.findAll('li')
+     if len(listitems) > 0:
+      count = 0
+      for listitem in listitems:
+       link = listitem.find('a', attrs={'href' : re.compile("^/%s/" % type)})
+       if link.img:
+        if re.search("assets/images/%ss/" % type, link.img["src"]):
+         info = tools.defaultinfo(1)
+         #info["Title"] = link.img["alt"]
+         if listitem.p.string:
+          info["Title"] = listitem.p.string.strip()
+         else:
+          info["Title"] = link.img["alt"]
+         info["Thumb"] = "%s/%s" % (ziln_urls["ZILN"], link.img["src"])
+         info["Count"] = count
+         count += 1
+         #channelurl = re.search("/%s/(.*)" % type, link["href"]).group(1)
+         channelurl = re.search("assets/images/%ss/([0-9]*?)-mini.jpg" % type, link.img["src"]).group(1)
+         #infourl = "&info=%s" % urllib.quote(str(info))
+         info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
+         tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], folder)
+    else:
+     sys.stderr.write("Search returned no results")
   else:
    sys.stderr.write("Couldn't find any programs")
  else:
   sys.stderr.write("Couldn't get page")
-   
-def PROGRAMMES(type, urlext):
- if type == "channel":
-  folder = 1
-  url = ziln_urls["ZILN"]
- elif type == "video":
-  folder = 0
-  url = "%s/channel/%s" % (ziln_urls["ZILN"], urlext)
- doc = tools.gethtmlpage(url)
- if doc:
-  div_tag = SoupStrainer('div')
-  html_divtag = BeautifulSoup(doc, parseOnlyThese = div_tag)
-  programmes = html_divtag.findAll(attrs={'class' : 'programmes'})
-  if len(programmes) > 0:
-   for programme in programmes:
-    iframe = programme.find('iframe')
-    url = "%s%s" % (ziln_urls["ZILN"], iframe["src"])
-    doc = tools.gethtmlpage(url)
-    listitems = list.findAll('li')
-    if len(listitems) > 0:
-     count = 0
-     for listitem in listitems:
-      link = listitem.find('a', attrs={'href' : re.compile("^/%s/" % type)})
-      if link.img:
-       if re.search("assets/images/%ss/" % type, link.img["src"]):
-        info = tools.defaultinfo(1)
-        #info["Title"] = link.img["alt"]
-        if listitem.p.string:
-         info["Title"] = listitem.p.string.strip()
-        else:
-         info["Title"] = link.img["alt"]
-         #info["Title"] = listitem.find('p').contents[0]
-        info["Thumb"] = "%s/%s" % (ziln_urls["ZILN"], link.img["src"])
-        info["Count"] = count
-        count += 1
-        channelurl = re.search("/%s/(.*)" % type, link["href"]).group(1)
-		#infourl = "&info=%s" % urllib.quote(str(info))
-        info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
-        tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], folder)
+
+def SEARCH():
+ import xbmc
+ keyboard = xbmc.Keyboard("", "Search for a Video")
+ #keyboard.setHiddenInput(False)
+ keyboard.doModal()
+ if keyboard.isConfirmed():
+  PROGRAMMES("search", keyboard.getText())
 
 def RESOLVE(index): #, info
  doc = tools.gethtmlpage("%s/playlist/null/%s" % (ziln_urls["ZILN"], index))

@@ -56,7 +56,8 @@ def INDEX():
  channels = dict()
  channels["0"] = "TV3"
  channels["1"] = "TVNZ"
- channels["2"] = "Ziln"
+ if addon.getSetting('Ziln_hide') == "false":
+  channels["2"] = "Ziln"
  #channels["3"] = "iSKY"
 # streamingchannels = dict()
 # streamingchannels["0"] = "Shine"
@@ -65,15 +66,16 @@ def INDEX():
  for index in channels:
   info = tools.defaultinfo(1)
   info["Title"] = channels[index]
-  addon = xbmcaddon.Addon(id = sys.argv[0][9:-1])
   info["Thumb"] = os.path.join(addon.getAddonInfo('path'), "resources/images/%s.png" % channels[index])
   info["Count"] = int(index)
   info["FileName"] = "%s?ch=%s" % (sys.argv[0], channels[index])
   tools.addlistitem(int(sys.argv[1]), info, "resources/images/%s.jpg" % channels[index], 1, count)
- import parliament
- parliament.RESOLVE("Parliament", count)
- import shine
- shine.RESOLVE("Shine", count)
+ if addon.getSetting('Parliament_hide') == "false":
+  import parliament
+  parliament.RESOLVE("Parliament", count)
+ if addon.getSetting('Shine_hide') == "false":
+  import shine
+  shine.RESOLVE("Shine", count)
 
 # Decide what to run based on the plugin URL
 
@@ -130,14 +132,21 @@ if params:
    tools.addsorting(int(sys.argv[1]), ["label"])
  elif params["ch"][0] == "Ziln":
   import ziln
-  if params.get("channel", "") <> "":
-   ziln.INDEX("video", params["channel"][0])
+  if params.get("folder", "") <> "":
+   if params["folder"][0] == "channels":
+    ziln.PROGRAMMES("channel", "")
+    tools.addsorting(int(sys.argv[1]), ["label"])
+   elif params["folder"][0] == "search":
+    ziln.SEARCH()
+    tools.addsorting(int(sys.argv[1]), ["label"])
+  elif params.get("channel", "") <> "":
+   ziln.PROGRAMMES("video", params["channel"][0])
    tools.addsorting(int(sys.argv[1]), ["label"])
   elif params.get("video", "") <> "":
    ziln.RESOLVE(params["video"][0]) #, eval(urllib.unquote(params["info"][0]))
    tools.addsorting(int(sys.argv[1]), ["label"])
   else:
-   ziln.INDEX("channel", "")
+   ziln.INDEX()
    tools.addsorting(int(sys.argv[1]), ["label"])
  elif params["ch"][0] == "Shine":
   import shine

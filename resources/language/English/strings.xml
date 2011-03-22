@@ -7,7 +7,8 @@
   <string id="30011">Low</string>
   <string id="30012">Medium</string>
   <string id="30013">High</string>
-  <string id="30014">Stream Type</string>
+  <string id="30020">Stream Type</string>
+  <string id="30021">Hide This Channel</string>
 
   <string id="30052">Categories</string>
   <string id="30053">Channels</string>

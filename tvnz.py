@@ -10,7 +10,7 @@ FANART_URL = 'resources/images/TVNZ.jpg'
 MIN_BITRATE = 400000
 
 def INDEX():
- link = tools.gethtmlpage("%s/content/ps3_navigation/ps3_xml_skin.xml" % (BASE_URL))
+ link = tools.gethtmlpage("%s/content/ps3_navigation/ps3_xml_skin.xml" % (BASE_URL), "ps3")
  count = 0
  for stat in minidom.parseString(link).documentElement.getElementsByTagName('MenuItem'):
   type = stat.attributes["type"].value
@@ -25,7 +25,7 @@ def INDEX():
     tools.addlistitem(int(sys.argv[1]), info, FANART_URL, 1)
 
 def SHOW_LIST(id):
- link = tools.gethtmlpage("%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id))
+ link = tools.gethtmlpage("%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id), "ps3")
  node = minidom.parseString(link).documentElement
  urls = list()
  count = 0
@@ -46,7 +46,7 @@ def SHOW_LIST(id):
 
 
 def SHOW_DISTRIBUTORS(id):
- link = tools.gethtmlpage("%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id))
+ link = tools.gethtmlpage("%s/content/%s/ps3_xml_skin.xml" % (BASE_URL, id), "ps3")
  node = minidom.parseString(link).documentElement
  print node.toxml().encode('latin1')
  urls = list()
@@ -62,7 +62,7 @@ def SHOW_EPISODES(id):
  except:
   pass
  try:
-  link = tools.gethtmlpage("%s/content/%s_extras_group/ps3_xml_skin.xml" % (BASE_URL, id[:-15]))
+  link = tools.gethtmlpage("%s/content/%s_extras_group/ps3_xml_skin.xml" % (BASE_URL, id[:-15]), "ps3")
   node = minidom.parseString(link).documentElement
   if node:
    info = tools.defaultinfo(1)
@@ -73,7 +73,7 @@ def SHOW_EPISODES(id):
   return
 
 def getEpisodes(id, url):
- link = tools.gethtmlpage(url)
+ link = tools.gethtmlpage(url, "ps3")
  node = minidom.parseString(link).documentElement
  for ep in node.getElementsByTagName('Episode'):
   addEpisode(ep)
@@ -171,7 +171,7 @@ def getAdvert(chapter):
  advert = chapter.getElementsByTagName('ref')
  if len(advert):
   # fetch the link - it'll return a .asf file
-  link = tools.gethtmlpage(advert[0].attributes['src'].value)
+  link = tools.gethtmlpage(advert[0].attributes['src'].value, "ps3")
   node = minidom.parseString(link).documentElement
   # grab out the URL to the actual flash ad
   for flv in node.getElementsByTagName('FLV'):
@@ -179,7 +179,7 @@ def getAdvert(chapter):
     return(flv.firstChild.wholeText)
 
 def RESOLVE(id, info):
- link = tools.gethtmlpage("%s/content/%s/ta_ent_smil_skin.smil?platform=PS3" % (BASE_URL, id))
+ link = tools.gethtmlpage("%s/content/%s/ta_ent_smil_skin.smil?platform=PS3" % (BASE_URL, id), "ps3")
  node = minidom.parseString(link).documentElement
  urls=list()
  for chapter in node.getElementsByTagName('seq'):
