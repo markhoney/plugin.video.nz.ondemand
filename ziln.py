@@ -2,6 +2,9 @@ import tools, urllib, string, re, sys, time, xbmcaddon, xbmcgui, xbmcplugin
 from BeautifulSoup import BeautifulSoup, SoupStrainer, BeautifulStoneSoup
 from xml.dom import minidom
 
+addon = xbmcaddon.Addon(id = sys.argv[0][9:-1])
+localize = addon.getLocalizedString
+
 ziln_urls = dict()
 ziln_urls["ZILN"] = 'http://www.ziln.co.nz'
 ziln_urls["RTMP1"] = 'rtmp://flash1.e-cast.co.nz'
@@ -11,13 +14,13 @@ ziln_urls["Fanart"] = 'resources/images/Ziln.jpg'
 
 def INDEX():
  info = tools.defaultinfo(1)
- info["Title"] = "Channels"
+ info["Title"] = localize(30053)
  info["Count"] = 1
  #info["Thumb"] = "DefaultVideoPlaylists.png"
  info["FileName"] = "%s?ch=Ziln&folder=channels" % sys.argv[0]
  tools.addlistitem(int(sys.argv[1]), info, ziln_urls["Fanart"], 1)
  info = tools.defaultinfo(1)
- info["Title"] = "Search"
+ info["Title"] = localize(30065)
  info["Count"] = 2
  info["Thumb"] = "DefaultVideoPlaylists.png"
  info["FileName"] = "%s?ch=Ziln&folder=search" % sys.argv[0]

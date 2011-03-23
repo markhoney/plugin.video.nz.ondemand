@@ -17,6 +17,8 @@ tv3_urls["BASE1"] = 'http://ondemand'
 tv3_urls["BASE2"] = 'co.nz'
 tv3_urls["RTMP1"] = 'rtmpe://nzcontent.mediaworks.co.nz'
 tv3_urls["RTMP2"] = '_definst_/mp4:'
+tv3_urls["HTTP1"] = 'http://flash.mediaworks.co.nz'
+tv3_urls["HTTP2"] = 'streams/_definst_//'
 tv3_urls["VIDEO1"] = 'tabid'
 tv3_urls["VIDEO2"] = 'articleID'
 tv3_urls["VIDEO3"] = 'MCat'
@@ -75,6 +77,11 @@ def rtmp(provider): #Build an RTMP URL for a given site (c4tv or tv3)
  else:
   return "%s/%s/%s" % (tv3_urls["RTMP1"], provider, tv3_urls["RTMP2"])
 
+def http(provider): #Build an RTMP URL for a given site (c4tv or tv3)
+ if provider == "c4tv":
+  return "%s/%s/%s" % (tv3_urls["HTTP1"], "c4", tv3_urls["HTTP2"])
+ else:
+  return "%s/%s/%s" % (tv3_urls["HTTP1"], provider, tv3_urls["HTTP2"])
 
 
 
@@ -86,6 +93,7 @@ def INDEX_FOLDERS(): #Create a list of top level folders for the hierarchy view
  folders["1"] = localize(30053) # "Channels"
  folders["2"] = localize(30054) # "Genres"
  #folders["3"] = localize(30055) # "Shows"
+ folders["4"] = localize(30065) # "Search"
  count = len(folders)
  for index in folders:
   info = tools.defaultinfo(1)
@@ -120,6 +128,8 @@ def INDEX_FOLDER(folder): #Create second level folder for the hierarchy view, on
    tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 1)
  if folder == "Shows":
   INDEX_SHOWS("tv3")
+ elif folder == "Search":
+  INDEX_SEARCH()
 
 def INDEX(provider): #Create a list of top level folders as scraped from TV3's website
  doc = tools.gethtmlpage("%s/tabid/56/default.aspx" % (base_url(provider))) #Get our HTML page with a list of video categories
@@ -152,6 +162,14 @@ def INDEX(provider): #Create a list of top level folders as scraped from TV3's w
    sys.stderr.write("Couldn't find any categories")
  else:
   sys.stderr.write("Couldn't get index webpage")
+
+def INDEX_SEARCH():
+ import xbmc
+ keyboard = xbmc.Keyboard("Away", "Search for a Video")
+ #keyboard.setHiddenInput(False)
+ keyboard.doModal()
+ if keyboard.isConfirmed():
+  SHOW_SEARCH("58", keyboard.getText())
 
 def INDEX_SHOWS(provider): #Create a second level list of TV Shows from a TV3 webpage
  #doc = tools.gethtmlpage("%s/Shows/tabid/64/Default.aspx" % ("http://www.tv3.co.nz")) #Get our HTML page with a list of video categories
@@ -275,32 +293,54 @@ def add_item_atoz(soup, provider, count): #Scrape items from an AtoZ-style HTML 
  baseurl = base_url(provider)
  info = tools.defaultinfo()
  info["Studio"] = provider
- link = soup.h5.find("a", attrs={"href": re.compile(baseurl)})
- if link:
-  infoitems = {}
-  href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, tv3_urls["VIDEO1"], tv3_urls["VIDEO2"], tv3_urls["VIDEO3"]), link['href'])
-  if href:
-   if link.string:
-    title = link.string.strip()
-    if title <> "":
-     info["TVShowTitle"] = title
-     image = soup.find("img", attrs={"src": re.compile(tv3_urls["IMG_RE2"]), "title": True})
-     if image:
-      info.update(tools.imageinfo(image))
-     info.update(seasonepisode(soup.contents[4]))
-     info["Title"] = tools.itemtitle(info["TVShowTitle"], info["PlotOutline"])
-     plot = soup.find("span", attrs={"class": "lite"})
-     if plot.string:
-      cleanedplot = plot.string.strip()
-      if cleanedplot:
-       info["Plot"] = tools.unescape(cleanedplot)
-     info["Count"] = count
-     info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
-     infoitems[info["Title"]] = info
-     #tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
-  tools.addlistitems(infoitems, tv3_urls["Fanart"], 0)
+ if soup.find('h5'):
+  link = soup.h5.find("a", attrs={"href": re.compile(baseurl)})
+  if link:
+   infoitems = {}
+   href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, tv3_urls["VIDEO1"], tv3_urls["VIDEO2"], tv3_urls["VIDEO3"]), link['href'])
+   if href:
+    if link.string:
+     title = link.string.strip()
+     if title <> "":
+      info["TVShowTitle"] = title
+      image = soup.find("img", attrs={"src": re.compile(tv3_urls["IMG_RE2"]), "title": True})
+      if image:
+       info.update(tools.imageinfo(image))
+      info.update(seasonepisode(soup.contents[4]))
+      info["Title"] = tools.itemtitle(info["TVShowTitle"], info["PlotOutline"])
+      plot = soup.find("span", attrs={"class": "lite"})
+      if plot.string:
+       cleanedplot = plot.string.strip()
+       if cleanedplot:
+        info["Plot"] = tools.unescape(cleanedplot)
+      info["Count"] = count
+      info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
+      infoitems[info["Title"]] = info
+      #tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
+   tools.addlistitems(infoitems, tv3_urls["Fanart"], 0)
 
-
+def add_item_search(soup, provider, count): #Scrape items from a table-style HTML page
+ baseurl = base_url(provider)
+ info = tools.defaultinfo()
+ info["Studio"] = provider
+ title = soup.find("div", attrs={"class": 'catTitle'})
+ if title:
+  info["TVShowTitle"] = title.a.string.strip()
+  href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, tv3_urls["VIDEO1"], tv3_urls["VIDEO2"], tv3_urls["VIDEO3"]), title.a['href'])
+  image = soup.find("img")
+  if image:
+   info.update(tools.imageinfo(image))
+  ep = soup.find("div", attrs={"class": 'epTitle'})
+  if ep:
+   if ep.a:
+    info.update(seasonepisode(ep.a))
+  date = soup.find("div", attrs={"class": 'epDate'})
+#  if date:
+#   sys.stderr.write(date.span[1].string.strip())
+  info["Title"] = tools.itemtitle(info["TVShowTitle"], info["PlotOutline"])
+  info["Count"] = count
+  info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (sys.argv[0], "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
+  tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0)
 
 
 
@@ -324,6 +364,23 @@ def SHOW_EPISODES(catid, provider): #Show video items from a normal TV3 webpage
    count = 0
    for soup in programs:
     add_item_div(soup, provider, count)
+    count += 1
+  else:
+   sys.stderr.write("Couldn't find any videos")
+ else:
+  sys.stderr.write("Couldn't get videos webpage")
+
+def SHOW_SEARCH(catid, searchterm): #Show video items from a normal TV3 webpage
+ doc = tools.gethtmlpage("%s/search/tabid/%s/Default.aspx?amq=%s" % (base_url("tv3"), catid, searchterm.replace(" ", "+")))
+ if doc:
+  a_tag=SoupStrainer('div')
+  html_atag = BeautifulSoup(doc, parseOnlyThese = a_tag)
+  programs = html_atag.findAll(attrs={"class": "results"})
+  if len(programs) > 0:
+   count = 0
+   for soup in programs:
+    provider = "tv3"
+    add_item_search(soup, "tv3", count)
     count += 1
   else:
    sys.stderr.write("Couldn't find any videos")
@@ -401,11 +458,11 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
    videoplayer = re.search('swfobject.embedSWF\("(http://static.mediaworks.co.nz/(.*?).swf)', doc)
    if videoplayer:
     auth = re.search('random_num = "([0-9]+)";', doc)
-    site = re.search("var pageloc='TV-(FOUR|TV3)-Video-OnDemand-", doc)
-    if site.group(1) == 'TV3':
-     realstudio = 'tv3'
-    else:
-     realstudio = 'c4'
+    realstudio = 'tv3'
+    site = re.search("var pageloc='TV-(FOUR|TV3)-Video(Extras)?-OnDemand-", doc)
+    if site:
+     if site.group(1) <> 'TV3':
+      realstudio = 'c4'
     playlist=list()
     #if addon.getSetting('TV3_showads') == 'true':
      #playlist.append(ad)
@@ -437,16 +494,21 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
     elif addon.getSetting('TV3_quality') == "Medium":
      quality = MediumQuality
      quality2 = HighQuality
-    #rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
-    rtmpurl = '%s%s/%s/%s_%s' % (rtmp(realstudio), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
-    sys.stderr.write("RTMP URL: %s" % (rtmpurl))
-    #swfverify = ' swfUrl=%s swfVfy=true' % (videoplayer.group(1))
-    if auth:
-     swfverify = ' swfUrl=%s?rnd=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), auth.group(1), pageUrl)
+    geo = re.search('var geo= "(no|geo)";', doc)
+    if (geo.group(1) == 'no'):
+     url = '%s%s/%s/%s_%s.%s' % (http(realstudio), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality, "mp4")
     else:
-     swfverify = ' swfUrl=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), pageUrl)
+     #swfverify = ' swfUrl=%s swfVfy=true' % (videoplayer.group(1))
+     #rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
+     url = '%s%s/%s/%s_%s' % (rtmp(realstudio), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
+     if auth:
+      swfverify = ' swfUrl=%s?rnd=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), auth.group(1), pageUrl)
+     else:
+      swfverify = ' swfUrl=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), pageUrl)
+     url += swfverify
+    sys.stderr.write("URL: %s" % (url))
     #sys.stderr.write("Flash Player: %s" % (videoplayer.group(1)))
-    playlist.append(rtmpurl + swfverify)
+    playlist.append(url)
     if len(playlist) > 1:
      uri = constructStackURL(playlist)
     elif len(playlist) == 1:
@@ -456,7 +518,7 @@ def RESOLVE(id, info): #Scrape a page for a given OnDemand video and build an RT
     #liz.setProperty("IsPlayable", "true")
     #liz.setPath(uri)
     #xbmcplugin.setResolvedUrl(handle = int(sys.argv[1]), succeeded = True, listitem = liz)
-    info["FileName"] = rtmpurl
+    info["FileName"] = url
     tools.addlistitem(int(sys.argv[1]), info, tv3_urls["Fanart"], 0, 1, uri)
    else:
     sys.stderr.write("Couldn't get video player URL")
