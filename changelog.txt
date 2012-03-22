@@ -1,5 +1,15 @@
+
+[B]2.0.0[/B]
+- Updated for XBMC Eden
+
+[B]1.4.0[/B]
+- Added NZOnScreen videos
+
+[B]1.3.4[/B]
+- Added search for TVNZ
+
 [B]1.3.3[/B]
-- Added search for TV3 (just waiting for PS3 now)
+- Added search for TV3 (just waiting for TVNZ now)
 - Fixed HTTP (non RTMP) stream detection for TV3 (so more videos should now play properly)
 
 [B]1.3.2[/B]

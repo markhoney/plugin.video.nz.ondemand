@@ -1,4 +1,4 @@
-import tools, urllib, string, re, sys, time, xbmcaddon
+import urllib, string, re, sys, time, xbmcaddon, resources.tools
 from BeautifulSoup import BeautifulSoup, SoupStrainer
 
 addon = xbmcaddon.Addon(id = sys.argv[0][9:-1])

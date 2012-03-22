@@ -35,130 +35,130 @@
 
 # Import external libraries
 
-import os, cgi, sys, tools, urlparse, urllib, xbmcaddon
+import os, cgi, sys, urlparse, urllib
+import xbmcaddon, xbmcgui, xbmcplugin
 
-# Setup global variables
+import resources.tools as tools
+import resources.config as config
 
-addon = xbmcaddon.Addon(id = sys.argv[0][9:-1])
-localize = addon.getLocalizedString
+#tools.initaddon()
 
-
-
-
-
-
-
-
-
-
-
-def INDEX():
- channels = dict()
- channels["0"] = "TV3"
- channels["1"] = "TVNZ"
- if addon.getSetting('Ziln_hide') == "false":
-  channels["2"] = "Ziln"
- #channels["3"] = "iSKY"
-# streamingchannels = dict()
-# streamingchannels["0"] = "Shine"
-# streamingchannels["1"] = "Parliament"
- count = len(channels) + 1 #+ len(streamingchannels)
- for index in channels:
-  info = tools.defaultinfo(1)
-  info["Title"] = channels[index]
-  info["Thumb"] = os.path.join(addon.getAddonInfo('path'), "resources/images/%s.png" % channels[index])
-  info["Count"] = int(index)
-  info["FileName"] = "%s?ch=%s" % (sys.argv[0], channels[index])
-  tools.addlistitem(int(sys.argv[1]), info, "resources/images/%s.jpg" % channels[index], 1, count)
- if addon.getSetting('Parliament_hide') == "false":
-  import parliament
-  parliament.RESOLVE("Parliament", count)
- if addon.getSetting('Shine_hide') == "false":
-  import shine
-  shine.RESOLVE("Shine", count)
+settings = config.__settings__
 
 # Decide what to run based on the plugin URL
 
 params = cgi.parse_qs(urlparse.urlparse(sys.argv[2])[4])
 if params:
  if params["ch"][0] == "TV3":
-  import tv3
+  from resources.channels.tv3 import tv3 as tv3class
+  tv3 = tv3class()
   if params.get("folder", "") <> "":
-   tv3.INDEX_FOLDER(params["folder"][0])
-   tools.addsorting(int(sys.argv[1]), ["unsorted", "label"])
+   tv3.folderindex(params["folder"][0])
   elif params.get("cat", "") <> "":
    if params["cat"][0] == "tv":
-    tv3.SHOW_EPISODES(params["catid"][0], "tv3")
-    tools.addsorting(int(sys.argv[1]), ["unsorted", "date", "label", "runtime", "episode"], "episodes")
+    tv3.episodes(params["catid"][0], "tv3")
    elif params["cat"][0] == "atoz":
-    tv3.SHOW_ATOZ(params["catid"][0], "tv3")
-    tools.addsorting(int(sys.argv[1]), ["unsorted", "date", "label", "runtime", "episode"], "tvshows")
+    tv3.atoz(params["catid"][0], "tv3")
    elif params["cat"][0] == "tv3":
-    tv3.SHOW_EPISODES(params["catid"][0], "tv3")
-    tools.addsorting(int(sys.argv[1]), ["unsorted", "date", "label", "runtime", "episode"], "episodes")
+    tv3.episodes(params["catid"][0], "tv3")
    elif params["cat"][0] == "c4tv":
-    tv3.SHOW_EPISODES(params["catid"][0], "c4tv")
-    tools.addsorting(int(sys.argv[1]), ["unsorted", "date", "label", "runtime", "episode"], "episodes")
+    tv3.episodes(params["catid"][0], "c4tv")
    elif params["cat"][0] == "shows":
-    tv3.SHOW_SHOW(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
-    tools.addsorting(int(sys.argv[1]), ["unsorted", "date", "label", "runtime", "episode"], "episodes")
+    tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
   elif params.get("id", "") <> "":
-   tv3.RESOLVE(params["id"][0], eval(urllib.unquote(params["info"][0])))
+   tv3.play(params["id"][0], eval(urllib.unquote(params["info"][0])))
   else:
-   if addon.getSetting('TV3_folders') == 'true':
-    tv3.INDEX_FOLDERS()
+   if config.__settings__.getSetting('TV3_folders') == 'true':
+    tv3.index()
    else:
-    tv3.INDEX("tv3")
-   tools.addsorting(int(sys.argv[1]), ["unsorted", "label"])
+    tv3.index()
  elif params["ch"][0] == "TVNZ":
-  import tvnz
-  if params.get("type", "") <> "":
+  #import resources.channels.tvnz as tvnz
+  #import resources.channels.tvnz
+  #tvnz = resources.channels.tvnz.tvnz
+  from resources.channels.tvnz import tvnz as tvnzclass
+  tvnz = tvnzclass()
+  #if params.get("type", "") == "":
+  if not "type" in params:
+   tvnz.index()
+  else:
    if params["type"][0] == "shows":
-    tvnz.EPISODE_LIST(params["id"][0])
-    tools.addsorting(int(sys.argv[1]), ["label"], "episodes")
+    tvnz.episodes(params["id"][0])
+    #tvnz.EPISODE_LIST(params["id"][0])
+    #tools.addsorting(["label"], "episodes")
    elif params["type"][0] == "singleshow":
-    tvnz.SHOW_EPISODES(params["id"][0])
-    tools.addsorting(int(sys.argv[1]), ["date"], "episodes")
+    tvnz.episodes(params["id"][0])
+    #tvnz.SHOW_EPISODES(params["id"][0])
+    #tools.addsorting(["date"], "episodes")
    elif params["type"][0] == "alphabetical":
-    tvnz.SHOW_LIST(params["id"][0])
-    tools.addsorting(int(sys.argv[1]), ["label"], "tvshows")
+    tvnz.show(params["id"][0])
+    #tvnz.SHOW_LIST(params["id"][0])
+    #tools.addsorting(["label"], "tvshows")
    elif params["type"][0] == "distributor":
     tvnz.SHOW_DISTRIBUTORS(params["id"][0])
-    tools.addsorting(int(sys.argv[1]), ["label"], "tvshows")
+    tools.addsorting(["label"], "tvshows")
+   elif params["type"][0] == "search":
+    tvnz.search()
+    #tools.addsorting(["label"], "tvshows")
    elif params["type"][0] == "video":
-    tvnz.RESOLVE(params["id"][0], eval(urllib.unquote(params["info"][0])))
-  else:
-   tvnz.INDEX()
-   tools.addsorting(int(sys.argv[1]), ["label"])
+    tvnz.play(params["id"][0], eval(urllib.unquote(params["info"][0])))
+    #tvnz.RESOLVE(params["id"][0], eval(urllib.unquote(params["info"][0])))
  elif params["ch"][0] == "Ziln":
-  import ziln
+  from resources.channels.ziln import ziln as zilnclass
+  ziln = zilnclass()
   if params.get("folder", "") <> "":
    if params["folder"][0] == "channels":
-    ziln.PROGRAMMES("channel", "")
-    tools.addsorting(int(sys.argv[1]), ["label"])
+    ziln.programmes("channel", "")
    elif params["folder"][0] == "search":
-    ziln.SEARCH()
-    tools.addsorting(int(sys.argv[1]), ["label"])
+    ziln.search()
   elif params.get("channel", "") <> "":
-   ziln.PROGRAMMES("video", params["channel"][0])
-   tools.addsorting(int(sys.argv[1]), ["label"])
+   ziln.programmes("video", params["channel"][0])
   elif params.get("video", "") <> "":
-   ziln.RESOLVE(params["video"][0]) #, eval(urllib.unquote(params["info"][0]))
-   tools.addsorting(int(sys.argv[1]), ["label"])
+   ziln.play(params["video"][0]) #, eval(urllib.unquote(params["info"][0]))
   else:
-   ziln.INDEX()
-   tools.addsorting(int(sys.argv[1]), ["label"])
- elif params["ch"][0] == "Shine":
-  import shine
-  shine.RESOLVE(params["ch"][0])
-# elif params["ch"][0] == "Parliament":
-#  import parliament
-#  parliament.RESOLVE(params["ch"][0], eval(urllib.unquote(params["info"][0])))
+   ziln.index()
+ elif params["ch"][0] == "NZOnScreen":
+  from resources.channels.nzonscreen import nzonscreen as nzonscreenclass
+  nzonscreen = nzonscreenclass()
+  if params.get("page", "") <> "":
+   nzonscreen.page(urllib.unquote(params["filter"][0]), params["page"][0])
+  elif params.get("filter", "") <> "":
+   if params["filter"][0] == "search":
+    nzonscreen.search()
+   else:
+    nzonscreen.index(urllib.unquote(params["filter"][0]))
+  elif params.get("title", "") <> "":
+   nzonscreen.play(params["title"][0])
+  else:
+   nzonscreen.index()
 # elif params["ch"][0] == "iSKY":
 #  import isky
 #  isky.INDEX()
  else:
   sys.stderr.write("Invalid Channel ID")
 else:
- INDEX()
- tools.addsorting(int(sys.argv[1]), ["unsorted", "label"])
+ channels = ["TV3", "TVNZ", "NZOnScreen"]
+ if settings.getSetting('Ziln_hide') == "false":
+  channels.append("Ziln")
+ xbmc = tools.xbmcItems()
+ for channel in channels:
+  item = tools.xbmcItem()
+  item.fanart = os.path.join('extrafanart', "%s.jpg" % channel)
+  info = item.info
+  info["Title"] = channel
+  info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
+  info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
+  xbmc.items.append(item)
+# for item in xbmc.items:
+  #sys.stderr.write(item.info["FileName"])
+#  xbmc.message(item.info["FileName"])
+ if settings.getSetting('Parliament_hide') == "false":
+  from resources.channels.parliament import parliament as parliamentclass
+  parliament = parliamentclass()
+  xbmc.items.append(parliament.item())
+ if settings.getSetting('Shine_hide') == "false":
+  from resources.channels.shine import shine as shineclass
+  shine = shineclass()
+  xbmc.items.append(shine.item())
+ xbmc.sorting.append('UNSORTED')
+ xbmc.addall()
