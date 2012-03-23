@@ -74,9 +74,9 @@ class ziln:
         link = listitem.find('a', attrs={'href' : re.compile("^/%s/" % type)})
         if link.img:
          if re.search("assets/images/%ss/" % type, link.img["src"]):
+          #item = tools.xbmcItem()
           item = tools.xbmcItem()
           info = item.info
-          #info["Title"] = link.img["alt"]
           if listitem.p.string:
            info["Title"] = listitem.p.string.strip()
           else:
@@ -85,7 +85,11 @@ class ziln:
           #channelurl = re.search("/%s/(.*)" % type, link["href"]).group(1)
           channelurl = re.search("assets/images/%ss/([0-9]*?)-mini.jpg" % type, link.img["src"]).group(1)
           #infourl = "&info=%s" % urllib.quote(str(info))
-          info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
+          if type == "video":
+           item.folder = False
+           info["FileName"] = self._geturl(channelurl)
+          else:
+           info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
           self.xbmcitems.items.append(item)
        self.xbmcitems.addall()
      else:
@@ -117,3 +121,10 @@ class ziln:
    
    # <jwplayer:hd.file>/assets/videos/airsidetv/files/720p/airnz_777_200s_lax_HD.mp4</jwplayer:hd.file>
    # <media:content bitrate="1800"  url="/assets/videos/airsidetv/files/520p/airnz_777_200s_lax_1000kb.mp4" type="video/x-mp4"/>
+
+
+ def _geturl(self, index):
+  page = webpage("%s/playlist/null/%s" % (self.urls['base'], index))
+  if page.doc:
+   soup = BeautifulStoneSoup(page.doc)
+   return "%s%s" % (self.urls['base'], soup.find('media:content')["url"])

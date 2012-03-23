@@ -112,6 +112,35 @@ class tv3:
    self.search()
   self.xbmcitems.addall()
 
+ def showsindex(provider): #Create a second level list of TV Shows from a TV3 webpage
+  #doc = resources.tools.gethtmlpage("%s/Shows/tabid/64/Default.aspx" % ("http://www.tv3.co.nz")) #Get our HTML page with a list of video categories
+  doc = resources.tools.gethtmlpage("%s/Shows.aspx" % ("http://www.tv3.co.nz")) #Get our HTML page with a list of video categories
+  page = webpage("%s/Shows.aspx" % ("http://www.tv3.co.nz"))
+  if page.doc:
+   html_divtag = BeautifulSoup(page.doc)
+   linksdiv = html_divtag.find('div', attrs = {"id": "pw_8171"})
+   if linksdiv:
+    links = linksdiv.findAll('a')
+    if len(links) > 0:
+     count = 0
+     for link in links:
+      item = tools.xbmcItem()
+      info = item.info
+      info["Title"] = link.string.strip()
+      catid = link['href']
+      if info["Title"] == "60 Minutes": #The URL on the next line has more videos
+       info["FileName"] = "%s?ch=TV3&cat=%s&title=%s&catid=%s" % (self.base, "shows", urllib.quote(info["Title"]), urllib.quote(catid)) #"http://ondemand.tv3.co.nz/Default.aspx?TabId=80&cat=22"
+      else:
+       info["FileName"] = "%s?ch=TV3&cat=%s&title=%s&catid=%s" % (self.base, "shows", urllib.quote(info["Title"]), urllib.quote(catid))
+      self.xbmcitems.items.append(item)
+     self.xbmcitems.addall()
+    else:
+     sys.stderr.write("Couldn't find any videos in list")
+   else:
+    sys.stderr.write("Couldn't find video list")
+  else:
+   sys.stderr.write("Couldn't get index webpage")
+
  def search(self):
   results = self.xbmcitems.search()
   if results:
@@ -125,8 +154,8 @@ class tv3:
    programs = html_atag.findAll(attrs={"class": "results"})
    if len(programs) > 0:
     for soup in programs:
-     provider = "tv3"
      _searchitem(soup, "tv3")
+    self.xbmcitems.addall()
    else:
     sys.stderr.write("Couldn't find any videos")
   else:

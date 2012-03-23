@@ -83,7 +83,6 @@ class xbmcItem:
    self.info["FileName"] = self.urls[bitrate]
 
  def stack(self, urls): #Build a URL stack from multiple URLs for the XBMC player
-  sys.stderr.write(str(len(urls)))
   if len(urls) == 1:
    return urls[0]
   elif len(urls) > 1:
@@ -125,7 +124,6 @@ class xbmcItems:
   if item.path:
    liz.setPath(item.path)
    try:
-    self.message(item.path)
     xbmcplugin.setResolvedUrl(handle = config.__id__, succeeded = True, listitem = liz)
    except:
     self.message("Couldn't play item.")
@@ -320,6 +318,7 @@ def addlistitem(info, fanart = "fanart.jpg", folder = 0, total = 0, path = ""): 
  else:
   liz.setPath(path)
   try:
+   message(info["Title"])
    xbmcplugin.setResolvedUrl(handle = resources.config.__id__, succeeded = True, listitem = liz)
   except:
    message("Boo, couldn't play.")

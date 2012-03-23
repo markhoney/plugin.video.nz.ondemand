@@ -117,7 +117,8 @@ class nzonscreen:
          info['Thumb'] = "%s%s" % (nzonscreen_urls["NZONSCREEN"], cell.div.div.a.img['src'])
          title = re.search("/title/(.*)", cell.a['href'])
          if title:
-          info['FileName'] = "%s?ch=NZOnScreen&title=%s" % (sys.argv[0], title.group(1))
+          #info['FileName'] = "%s?ch=NZOnScreen&title=%s" % (sys.argv[0], title.group(1))
+          info['FileName'] = self._geturl(title.group(1), item)
         elif cell['class'] == 'title_link title':
          info['Title'] = tools.unescape(cell.a.contents[0])
         elif cell['class'] == 'year':
@@ -128,7 +129,8 @@ class nzonscreen:
          pass
         elif cell['class'] == 'added':
          info["Date"] = tools.xbmcdate(cell.contents[0], ".")
-       self.xbmcitems.items.append(item)
+       if info['FileName']:
+        self.xbmcitems.items.append(item)
      self.xbmcitems.addall()
 
  def search(self):
@@ -161,3 +163,20 @@ class nzonscreen:
    info["FileName"] = uri
    item.path = uri
    self.xbmcitems.add(item, 1)
+
+ def _geturl(self, title, item):
+  url = "%s%s%s" % (self.urls['base'], self.urls['json'], title)
+  page = webpage(url)
+  if page.doc:
+   import json
+   videos = json.loads(page.doc)
+   allurls = dict()
+   for bitrate in self.bitrates:
+    allurls[bitrate] = list()
+   for video in videos:
+    for bitrate in self.bitrates:
+     allurls[bitrate].append(video[bitrate])
+#   for bitrate, urls in allurls.iteritems():
+#    item.urls[bitrate] = item.stack(urls)
+   uri = item.stack(allurls['hi_res'])
+   return uri

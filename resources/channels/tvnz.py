@@ -172,7 +172,7 @@ class tvnz:
   return False
 
  def play(self, id, info):
-  page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
+  page = webpage("/".join((self.urls['base'], self.urls['content'], id)))
   if page.doc:
    xml = self._xml(page.doc)
    if xml:
@@ -230,6 +230,50 @@ class tvnz:
      item.path = uri
      self.xbmcitems.add(item, 1)
      #tools.addlistitem(info, FANART_URL, 0, 1, uri)
+
+
+ def _geturl(self, id, info):
+  #page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
+  page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
+  if page.doc:
+   xml = self._xml(page.doc)
+   if xml:
+    urls = list()
+    allurls = dict()
+    for chapter in xml.getElementsByTagName('seq'):
+     for video in chapter.getElementsByTagName('video'):
+      bitrate = int(video.attributes["systemBitrate"].value)
+      allurls[bitrate] = list()
+     for video in chapter.getElementsByTagName('video'):
+      bitrate = int(video.attributes["systemBitrate"].value)
+      url = video.attributes["src"].value
+      if url[:7] == 'http://':
+       # easy case - we have an http URL
+       allurls[bitrate].append(url)
+       if bitrate == requiredbitrate:
+        urls.append(url)
+       sys.stderr.write("HTTP URL: " + url)
+      elif url[:5] == 'rtmp:':
+       # rtmp case
+       rtmp_url = "rtmpe://fms-streaming.tvnz.co.nz/tvnz.co.nz"
+       playpath = " playpath=" + url[5:]
+       flashversion = " flashVer=MAC%2010,0,32,18"
+       swfverify = " swfurl=http://tvnz.co.nz/stylesheets/tvnz/entertainment/flash/ondemand/player.swf swfvfy=true"
+       conn = " conn=S:-720"
+       allurls.append
+       allurls[bitrate].append(url)
+       if bitrate == requiredbitrate:
+        urls.append(rtmp_url + playpath + flashversion + swfverify + conn)
+       sys.stderr.write("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
+    for bitrate, urls in allurls.iteritems():
+     item.urls[bitrate] = item.stack(urls)
+    uri = item.stack(urls)
+    if uri:
+     #info['FileName'] = uri
+     item.path = uri
+     self.xbmcitems.add(item, 1)
+     #tools.addlistitem(info, FANART_URL, 0, 1, uri)
+
 
  def advert(self, chapter):
   advert = chapter.getElementsByTagName('ref')
