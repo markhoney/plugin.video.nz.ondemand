@@ -87,9 +87,10 @@ class ziln:
           #infourl = "&info=%s" % urllib.quote(str(info))
           if type == "video":
            item.folder = False
+           #info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
            info["FileName"] = self._geturl(channelurl)
           else:
-           info["FileName"] = "%s?ch=Ziln&%s=%s" % (sys.argv[0], type, urllib.quote(channelurl))
+           info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
           self.xbmcitems.items.append(item)
        self.xbmcitems.addall()
      else:

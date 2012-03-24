@@ -16,7 +16,7 @@ import xbmcplugin # http://xbmc.sourceforge.net/python-docs/xbmcplugin.html
 
 class webpage:
  def __init__(self, url = "", agent = 'ps3', cookie = ""):
-  self.doc = False
+  self.doc = ""
   self.agent = agent
   self.cookie = cookie
   if url:
@@ -111,24 +111,27 @@ class xbmcItems:
 
  def add(self, item, total = 0): #Add a list item (media file or folder) to the XBMC page
   # http://xbmc.sourceforge.net/python-docs/xbmcgui.html#ListItem
-  info = item.info
-  liz = xbmcgui.ListItem(label = info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
-  try:
-   fanart = item.fanart
-  except:
-   fanart = self.fanart
-  liz.setProperty('fanart_image', os.path.join(settings.getAddonInfo('path'), fanart))
-  liz.setInfo(type = "video", infoLabels = info)
-  if not item.folder:
-   liz.setProperty("IsPlayable", "true")
-  if item.path:
-   liz.setPath(item.path)
-   try:
-    xbmcplugin.setResolvedUrl(handle = config.__id__, succeeded = True, listitem = liz)
-   except:
-    self.message("Couldn't play item.")
-  else:
-   return xbmcplugin.addDirectoryItem(handle = config.__id__, url = info["FileName"], listitem = liz, isFolder = item.folder, totalItems = total)
+  if hasattr(item, 'info'):
+   info = item.info
+   #if hasattr(info, 'FileNames'):
+   if info["FileName"]:
+    liz = xbmcgui.ListItem(label = info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
+    try:
+     fanart = item.fanart
+    except:
+     fanart = self.fanart
+    liz.setProperty('fanart_image', os.path.join(settings.getAddonInfo('path'), fanart))
+    liz.setInfo(type = "video", infoLabels = info)
+    if not item.folder:
+     liz.setProperty("IsPlayable", "true")
+    if item.path:
+     liz.setPath(item.path)
+     try:
+      xbmcplugin.setResolvedUrl(handle = config.__id__, succeeded = True, listitem = liz)
+     except:
+      self.message("Couldn't play item.")
+    else:
+     return xbmcplugin.addDirectoryItem(handle = config.__id__, url = info["FileName"], listitem = liz, isFolder = item.folder, totalItems = total)
 
  def addall(self):
   total = len(self.items)
