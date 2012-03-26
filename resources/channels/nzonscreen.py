@@ -5,8 +5,8 @@ import xbmcgui, xbmcplugin, xbmcaddon
 
 import resources.tools as tools
 import resources.config as config
+settings = config.__settings__
 from resources.tools import webpage
-
 
 class nzonscreen:
  def __init__(self):
@@ -139,7 +139,7 @@ class nzonscreen:
   info = item.info
   info["Title"] = ""
   info["FileName"] = self._geturl(title, True)
-  item.path = uri
+  item.path = info["FileName"]
   self.xbmcitems.add(item, 1)
 
  def qualities(self, title): #, info
@@ -147,7 +147,7 @@ class nzonscreen:
 
  def _geturl(self, title, play):
   if play:
-   return tools.xbmcItem.url(self._videourls(title), settings.getSetting('NZOnScreen_quality'))
+   return self.xbmcitems.url(self._videourls(title), settings.getSetting('NZOnScreen_quality'))
   else:
    return "%s?ch=%s&title=%s" % (self.base, self.channel, title)
 
@@ -158,21 +158,23 @@ class nzonscreen:
    import json
    videos = json.loads(page.doc)
    allurls = dict()
+   returnurls = dict()
    #bitrates = list()
    filesizes = dict()
-   urls = dict()
    for name, value in videos[0].iteritems():
     if name[-4:] == '_res':
      #bitrates.append(name[:-4])
-     allurls[name[:-4]] = list()
+     bitrate = name[:-4]
+     allurls[bitrate] = list()
+     filesizes[bitrate] = 0
    for video in videos:
-    for bitrate, temp in allurls:
-     print bitrate
-     #allurls[bitrate].append(video[bitrate + '_res'])
-     #filesizes[bitrate] = filesizes[bitrate] + video[bitrate + '_res_mb']
-   for bitrate, urls in allurls:
-    urls[filesizes[bitrate]] = urls
-   return urls
+    for bitrate, temp in allurls.iteritems():
+     #print bitrate
+     allurls[bitrate].append(video[bitrate + '_res'])
+     filesizes[bitrate] = filesizes[bitrate] + video[bitrate + '_res_mb']
+   for bitrate, urls in allurls.iteritems():
+    returnurls[str(filesizes[bitrate])] = urls
+   return returnurls
 #   for bitrate, urls in allurls.iteritems():
 #    item.urls[bitrate] = item.stack(urls)
 #   uri = item.stack(allurls['hi_res'])

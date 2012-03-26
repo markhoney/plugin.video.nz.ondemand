@@ -181,6 +181,20 @@ class xbmcItems:
    return keyboard.getText()
   return False
 
+ def url(self, urls, quality = 'High'): # Low, Medium, High
+  if quality == 'Medium' and len(self.urls) > 2:
+   del urls[max(urls.keys())]
+  if quality == 'Low':
+   return self.stack(urls[min(urls.keys())])
+  else:
+   return self.stack(urls[max(urls.keys())])
+
+ def stack(self, urls): #Build a URL stack from multiple URLs for the XBMC player
+  if len(urls) == 1:
+   return urls[0]
+  elif len(urls) > 1:
+   return "stack://" + " , ".join([url.replace(',', ',,').strip() for url in urls])
+  return False
 
  def message(self, message, title = "Warning"): #Show an on-screen message (useful for debugging)
   import xbmcgui
