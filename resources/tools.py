@@ -69,8 +69,9 @@ class webpage:
    return 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.204 Safari/534.16'
 
 
+
 class xbmcItem:
- def __init__(self, folder = True, playable = False):
+ def __init__(self, folder = True):
   self.folder = folder
   self.path = ""
   self.info = dict()
@@ -97,6 +98,20 @@ class xbmcItem:
  def unescape(self, s): #Convert escaped HTML characters back to native unicode, e.g. &gt; to > and &quot; to "
   from htmlentitydefs import name2codepoint
   return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s)
+
+ def titleplot(self): #Build a nice title from the program title and sub-title (given as PlotOutline)
+  if self.info['PlotOutline']:
+   self.info['Title'] = "%s - %s" % (self.info['TVShowTitle'], self.info['PlotOutline'])
+
+ def url(self, urls = False, quality = 'High'): # Low, Medium, High
+  if not urls:
+   urls = self.urls
+  if quality == 'Medium' and len(self.urls) > 2:
+   del urls[max(urls.keys())]
+  if quality == 'Low':
+   return self.stack(urls[min(urls.keys())])
+  else:
+   return self.stack(urls[max(urls.keys())])
 
 
 class xbmcItems:
@@ -139,6 +154,15 @@ class xbmcItems:
    self.add(item, total)
   self._sort()
 
+  def addurls(self, urls):
+   total = len(urls)
+   for bitrate, url in urls:
+    item = xbmcItem(False)
+    item.info['Title'] = str(bitrate)
+    item.info['Filename'] = item.stack(urls)
+    self.add(item, total)
+   self._sort()
+
  def _sort(self):
   import xbmcplugin
   for method in self.sorting:
@@ -173,164 +197,11 @@ class xbmcItems:
   sys.stderr.write(message)
   
 
-def unescape(s):
- s = s.replace("&lt;", "<")
- s = s.replace("&gt;", ">")
- s = s.replace("&amp;", "&")
- return s
 
-def gethtmlpage(url, useragent = "ie9", cookie = 0): #Grab an HTML page
- """
- import os
- cachename = "%s/%s" %s (__cache__, url)
- if os.path.isfile(cachename):
-  f = os.open(cachename, 'r')
-  return f.read()
- else:
- """
- import urllib2
- if cookie:
-  import os, cookielib
-  #cj = cookielib.CookieJar()
-  cj = cookielib.MozillaCookieJar()
-  cj.load(os.path.join(resources.config.__settings__.getAddonInfo('path'), "cookies.txt"))
-  # http://www.nzonscreen.com/html5/opt_in
-  # www.nzonscreen.com	TRUE	/	FALSE	9999999999	nzos_html5	true
-  opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
- else:
-  opener = urllib2.build_opener()
- urllib2.install_opener(opener)
-# sys.stderr.write("Requesting page: %s" % (url))
- print "Requesting URL: %s" % (url)
- req = urllib2.Request(url)
- newheader = 'Mozilla/5.0 (Windows; U; MSIE 9.0; Windows NT 9.0; en-US)'
- if useragent == "ps3":
-  newheader = 'Mozilla/5.0 (PLAYSTATION 3; 3.55)'
- elif useragent == 'chrome':
-  newheader = 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.204 Safari/534.16'
- elif useragent == 'iphone':
-  newheader = 'Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like Gecko) Version/3.0 Mobile/1C25 Safari/419.3'
- elif useragent == 'ipad':
-  newheader = 'Mozilla/5.0 (iPad; U; CPU OS 3_2 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Version/4.0.4 Mobile/7B334b Safari/531.21.10'
- req.add_header('User-agent', newheader)
-# response = urllib2.urlopen(req)
-# doc = response.read()
-# response.close()
-# f = open(cachename, 'w')
-# f.write(doc)
-# return doc
- try:
-  response = urllib2.urlopen(req)
-  doc = response.read()
-  response.close()
-  return doc
- except urllib2.HTTPError, err:
-  print "urllib2.HTTPError requesting URL: %s" % (err.code)
-  pass
-
-def getxmldocument(s):
- try:
-  document = minidom.parseString(s)
-  if document:
-   return document.documentElement
- except ExpatError: # Thrown if the content contains just the <xml> tag and no actual content. Some of the TVNZ .xml files are like this :(
-  pass
-
-def unescape(s): #Convert escaped HTML characters back to native unicode, e.g. &gt; to > and &quot; to "
- from htmlentitydefs import name2codepoint
- return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s)
-
-def checkdict(info, items): #Check that all of the list "items" are in the dictionary "info"
- for item in items:
-  if info.get(item, "##unlikelyphrase##") == "##unlikelyphrase##":
-   sys.stderr.write("Dictionary missing item: %s" % (item))
-   return 0
- return 1
-
-# Metadata
-
-def defaultinfo(folder = 0): #Set the default info for folders (1) and videos (0). Most options have been hashed out as they don't show up in the list and are grabbed from the media by the player
- info = dict()
- if folder:
-  info["Icon"] = "DefaultFolder.png"
- else:
-  info["Icon"] = "DefaultVideo.png"
-  #info["VideoCodec"] = "flv"
-  #info["VideoCodec"] = "avc1"
-  #info["VideoCodec"] = "h264"
-  #info["VideoResolution"] = "480" #actually 360 (640x360)
-  #info["VideoAspect"] = "1.78"
-  #info["AudioCodec"] = "aac"
-  #info["AudioChannels"] = "2"
-  #info["AudioLanguage"] = "eng"
- info["Thumb"] = ""
- return info
 
 def xbmcdate(inputdate, separator = "/"): #Convert a date in "%d/%m/%y" format to an XBMC friendly format
  import time, xbmc
  return time.strftime(xbmc.getRegion("datelong").replace("DDDD,", "").replace("MMMM", "%B").replace("D", "%d").replace("YYYY", "%Y").strip(), time.strptime(inputdate, "%d" + separator + "%m" + separator + "%y"))
 
-def imageinfo(image): #Search an image for its HREF
- if image:
-  info = dict()
-  info["Thumb"] = image['src']
-  #alttitle = image['title']
-  return info
 
-def itemtitle(Title, PlotOutline): #Build a nice title from the program title and sub-title (given as PlotOutline)
- if PlotOutline:
-  Title = "%s - %s" % (Title, PlotOutline)
- return Title
 
-# URL manipulation 
-
-def constructStackURL(playlist): #Build a URL stack from multiple URLs for the XBMC player
- uri = ""
- for url in playlist:
-  url.replace(',',',,')
-  if len(uri)>0:
-   uri = uri + " , " + url
-  else:
-   uri = "stack://" + url
- return(uri)
-
-# XBMC Manipulation
-
-def addlistitems(infoarray, fanart = "fanart.jpg", folder = 0, path = ""):
- total = len(infoarray)
- #total = len(infoarray.viewkeys())
- i = 0
- #for listitem in infoarray:
- for listkey, listitem in infoarray.items():
-  #listitem["Count"] = i
-  i += 1
-  addlistitem(listitem, fanart, folder, total, path)
-
-def addlistitem(info, fanart = "fanart.jpg", folder = 0, total = 0, path = ""): #Add a list item (media file or folder) to the XBMC page
- import xbmcgui, xbmcplugin, os
- liz = xbmcgui.ListItem(info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
- liz.setProperty('fanart_image', os.path.join(resources.config.__settings__.getAddonInfo('path'), fanart))
- liz.setInfo(type = "Video", infoLabels = info)
- if not folder:
-  liz.setProperty("IsPlayable", "true")
- if path == "":
-  if xbmcplugin.addDirectoryItem(handle = resources.config.__id__, url = info["FileName"], listitem = liz, isFolder = folder, totalItems = total):
-   return 1
-  else:
-   return 0
- else:
-  liz.setPath(path)
-  try:
-   message(info["Title"])
-   xbmcplugin.setResolvedUrl(handle = resources.config.__id__, succeeded = True, listitem = liz)
-  except:
-   message("Boo, couldn't play.")
-    
-
-def getsearchterms():
- import xbmc
- keyboard = xbmc.Keyboard("", "Search for a Video")
- #keyboard.setHiddenInput(False)
- keyboard.doModal()
- if keyboard.isConfirmed():
-  return keyboard.getText()

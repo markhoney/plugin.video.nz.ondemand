@@ -87,8 +87,8 @@ class ziln:
           #infourl = "&info=%s" % urllib.quote(str(info))
           if type == "video":
            item.folder = False
-           #info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
-           info["FileName"] = self._geturl(channelurl)
+           info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
+           #info["FileName"] = self._geturl(channelurl)
           else:
            info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
           self.xbmcitems.items.append(item)
@@ -106,19 +106,13 @@ class ziln:
    self.programmes("search", results)
 
  def play(self, index): #, info
-  page = webpage("%s/playlist/null/%s" % (self.urls['base'], index))
-  if page.doc:
-   soup = BeautifulStoneSoup(page.doc)
-   item = tools.xbmcItem(False)
-   info = item.info
-   info["Title"] = soup.find('item').title.contents[0]
-   info["Thumb"] = "%s%s" % (self.urls['base'], soup.find('jwplayer:image').contents[0])
-   #info["Plot"] = soup.find('description').contents[0]
-   uri = "%s%s" % (self.urls['base'], soup.find('media:content')["url"])
-   info["FileName"] = uri
-   item.path = uri
-   sys.stderr.write(uri)
-   self.xbmcitems.add(item, 1)
+  item = tools.xbmcItem(False)
+  info = item.info
+  info["Title"] = ""
+  uri = self._geturl(index)
+  info["FileName"] = uri
+  item.path = uri
+  self.xbmcitems.add(item, 1)
    
    # <jwplayer:hd.file>/assets/videos/airsidetv/files/720p/airnz_777_200s_lax_HD.mp4</jwplayer:hd.file>
    # <media:content bitrate="1800"  url="/assets/videos/airsidetv/files/520p/airnz_777_200s_lax_1000kb.mp4" type="video/x-mp4"/>
@@ -128,4 +122,5 @@ class ziln:
   page = webpage("%s/playlist/null/%s" % (self.urls['base'], index))
   if page.doc:
    soup = BeautifulStoneSoup(page.doc)
-   return "%s%s" % (self.urls['base'], soup.find('media:content')["url"])
+   #return "%s%s" % (self.urls['base'], soup.find('media:content')["url"])
+   return "%s%s" % (self.urls['base'], urllib.quote(soup.find('media:content')["url"]))

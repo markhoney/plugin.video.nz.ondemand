@@ -9,6 +9,8 @@
   <string id="30013">High</string>
   <string id="30020">Stream Type</string>
   <string id="30021">Hide This Channel</string>
+  <string id="30022">Override Channel Quality</string>
+  <string id="30023">Choose Bandwidth per Program</string>
 
   <string id="30052">Categories</string>
   <string id="30053">Channels</string>
@@ -29,7 +31,8 @@
   <string id="30101">TV3</string>
   <string id="30102">TVNZ</string>
   <string id="30103">Ziln</string>
-  <string id="30104">iSky</string>
-  <string id="30105">Parliament</string>
-  <string id="30106">Shine</string>
+  <string id="30104">NZOnScreen</string>
+  <string id="30105">iSky</string>
+  <string id="30110">Parliament</string>
+  <string id="30111">Shine</string>
 </strings>

@@ -66,7 +66,7 @@ if params:
    elif params["cat"][0] == "shows":
     tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
   elif params.get("id", "") <> "":
-   tv3.play(params["id"][0], eval(urllib.unquote(params["info"][0])))
+   tv3.play(params["id"][0], params["provider"][0])
   else:
    if config.__settings__.getSetting('TV3_folders') == 'true':
     tv3.index()
@@ -84,25 +84,17 @@ if params:
   else:
    if params["type"][0] == "shows":
     tvnz.episodes(params["id"][0])
-    #tvnz.EPISODE_LIST(params["id"][0])
-    #tools.addsorting(["label"], "episodes")
    elif params["type"][0] == "singleshow":
     tvnz.episodes(params["id"][0])
-    #tvnz.SHOW_EPISODES(params["id"][0])
-    #tools.addsorting(["date"], "episodes")
    elif params["type"][0] == "alphabetical":
     tvnz.show(params["id"][0])
-    #tvnz.SHOW_LIST(params["id"][0])
-    #tools.addsorting(["label"], "tvshows")
    elif params["type"][0] == "distributor":
     tvnz.SHOW_DISTRIBUTORS(params["id"][0])
     tools.addsorting(["label"], "tvshows")
    elif params["type"][0] == "search":
     tvnz.search()
-    #tools.addsorting(["label"], "tvshows")
    elif params["type"][0] == "video":
-    tvnz.play(params["id"][0], eval(urllib.unquote(params["info"][0])))
-    #tvnz.RESOLVE(params["id"][0], eval(urllib.unquote(params["info"][0])))
+    tvnz.play(params["id"][0])
  elif params["ch"][0] == "Ziln":
   from resources.channels.ziln import ziln as zilnclass
   ziln = zilnclass()
@@ -114,7 +106,7 @@ if params:
   elif params.get("channel", "") <> "":
    ziln.programmes("video", params["channel"][0])
   elif params.get("video", "") <> "":
-   ziln.play(params["video"][0]) #, eval(urllib.unquote(params["info"][0]))
+   ziln.play(params["video"][0])
   else:
    ziln.index()
  elif params["ch"][0] == "NZOnScreen":
@@ -149,9 +141,6 @@ else:
   info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
   info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
   xbmc.items.append(item)
-# for item in xbmc.items:
-  #sys.stderr.write(item.info["FileName"])
-#  xbmc.message(item.info["FileName"])
  if settings.getSetting('Parliament_hide') == "false":
   from resources.channels.parliament import parliament as parliamentclass
   parliament = parliamentclass()

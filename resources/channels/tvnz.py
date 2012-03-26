@@ -167,78 +167,26 @@ class tvnz:
    info["TVShowTitle"] = title
    info["Title"] = " ".join((title, sxe, subtitle)) #subtitle
    info["Thumb"] = ep.attributes["src"].value
-   info["FileName"] = "%s?ch=%s&type=video&id=%s&info=%s" % (self.base, self.channel, link, urllib.quote(str(info)))
+   #info["FileName"] = "%s?ch=%s&type=video&id=%s&info=%s" % (self.base, self.channel, link, urllib.quote(str(info)))
+   info["FileName"] = "%s?ch=%s&type=video&id=%s" % (self.base, self.channel, link)
+   #info["FileName"] = self._geturl(link)
    return item
   return False
 
- def play(self, id, info):
-  page = webpage("/".join((self.urls['base'], self.urls['content'], id)))
-  if page.doc:
-   xml = self._xml(page.doc)
-   if xml:
-    item = tools.xbmcItem(playable = True)
-    item.info = info
-	#info = item.info
-    urls = list()
-    allurls = dict()
-    for chapter in xml.getElementsByTagName('seq'):
-    # grab out the advert link
-     if config.__settings__.getSetting('TVNZ_showads') == 'true':
-      ad = getAdvert(chapter)
-      if len(ad) > 0:
-       urls.append(ad)
-     maxbitrate = 0
-     minbitrate = 9999999999
-     for video in chapter.getElementsByTagName('video'):
-      bitrate = int(video.attributes["systemBitrate"].value)
-      allurls[bitrate] = list()
-      if bitrate > maxbitrate:
-       maxbitrate = bitrate
-      if bitrate < minbitrate:
-       minbitrate = bitrate
-     requiredbitrate = 700000 #Medium = 700000
-     if config.__settings__.getSetting('TVNZ_quality') == "High": #High = 1500000
-      requiredbitrate = maxbitrate
-     elif config.__settings__.getSetting('TVNZ_quality') == "Low": #Low = 300000
-      requiredbitrate = minbitrate
-     for video in chapter.getElementsByTagName('video'):
-      bitrate = int(video.attributes["systemBitrate"].value)
-      url = video.attributes["src"].value
-      if url[:7] == 'http://':
-       # easy case - we have an http URL
-       allurls[bitrate].append(url)
-       if bitrate == requiredbitrate:
-        urls.append(url)
-       sys.stderr.write("HTTP URL: " + url)
-      elif url[:5] == 'rtmp:':
-       # rtmp case
-       rtmp_url = "rtmpe://fms-streaming.tvnz.co.nz/tvnz.co.nz"
-       playpath = " playpath=" + url[5:]
-       flashversion = " flashVer=MAC%2010,0,32,18"
-       swfverify = " swfurl=http://tvnz.co.nz/stylesheets/tvnz/entertainment/flash/ondemand/player.swf swfvfy=true"
-       conn = " conn=S:-720"
-       allurls.append
-       allurls[bitrate].append(url)
-       if bitrate == requiredbitrate:
-        urls.append(rtmp_url + playpath + flashversion + swfverify + conn)
-       sys.stderr.write("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
-    for bitrate, urls in allurls.iteritems():
-     item.urls[bitrate] = item.stack(urls)
-    uri = item.stack(urls)
-    if uri:
-     #info['FileName'] = uri
-     item.path = uri
-     self.xbmcitems.add(item, 1)
-     #tools.addlistitem(info, FANART_URL, 0, 1, uri)
+ def play(self, id):
+  item = tools.xbmcItem(False)
+  info = item.info
+  info["Title"] = ""
+  info["FileName"] = self._geturl(id)
+  item.path = info["FileName"]
+  self.xbmcitems.add(item, 1)
 
-
- def _geturl(self, id, info):
-  #page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
+ def _geturl(self, id):
   page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
   if page.doc:
    xml = self._xml(page.doc)
    if xml:
-    urls = list()
+    urls = dict()
     allurls = dict()
     for chapter in xml.getElementsByTagName('seq'):
      for video in chapter.getElementsByTagName('video'):
@@ -250,8 +198,6 @@ class tvnz:
       if url[:7] == 'http://':
        # easy case - we have an http URL
        allurls[bitrate].append(url)
-       if bitrate == requiredbitrate:
-        urls.append(url)
        sys.stderr.write("HTTP URL: " + url)
       elif url[:5] == 'rtmp:':
        # rtmp case
@@ -262,17 +208,14 @@ class tvnz:
        conn = " conn=S:-720"
        allurls.append
        allurls[bitrate].append(url)
-       if bitrate == requiredbitrate:
-        urls.append(rtmp_url + playpath + flashversion + swfverify + conn)
        sys.stderr.write("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
+    maxbitrate = 0
     for bitrate, urls in allurls.iteritems():
-     item.urls[bitrate] = item.stack(urls)
-    uri = item.stack(urls)
-    if uri:
-     #info['FileName'] = uri
-     item.path = uri
-     self.xbmcitems.add(item, 1)
-     #tools.addlistitem(info, FANART_URL, 0, 1, uri)
+     #item.urls[bitrate] = item.stack(urls)
+     urls[bitrate] = item.stack(urls)
+     if bitrate > maxbitrate:
+      maxbitrate = bitrate
+    return urls[maxbitrate]
 
 
  def advert(self, chapter):
@@ -288,7 +231,6 @@ class tvnz:
       if flv.firstChild and len(flv.firstChild.wholeText):
        return(flv.firstChild.wholeText)
 
-
  def _duration(self, dur):
   # Durations are formatted like 0:43:15
   minutes = 0
@@ -299,26 +241,6 @@ class tvnz:
    except:
     pass
   return str(minutes)
-
- def _dateold(self, str):
-  # Dates are formatted like 23 Jan 2010.
-  # Can't use datetime.strptime as that wasn't introduced until Python 2.6
-  months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-  months2 = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-  str = str.encode('ascii', 'replace') # Part of the dates include the NO BREAK character \xA0 instead of a space
-  str = str.replace("?", " ")
-  parts = str.split(" ")
-  if len(parts) == 3:
-   if parts[1] in months:
-    month = months.index(parts[1])
-   elif parts[1] in months2:
-    month = months2.index(parts[1])
-   if month:
-    if len(parts[0]) == 2:
-     parts[0] = "20" + parts[0]
-    d = date(int(parts[2]), month + 1, int(parts[0]))
-    return d.strftime("%d.%m.%Y")
-  return ""
 
  def _date(self, str):
   # Dates are formatted like 23 Jan 2010.
