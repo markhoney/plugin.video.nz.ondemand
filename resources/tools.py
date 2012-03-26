@@ -33,7 +33,7 @@ class webpage:
   if self.cookie:
    req.add_header('Cookie', self.cookie) # 'nzos_html5=true' for NZOnScreen
   try:
-   response = urllib2.urlopen(req)
+   response = urllib2.urlopen(req, timeout = 20)
    self.doc = response.read()
    response.close()
   except urllib2.HTTPError, err:

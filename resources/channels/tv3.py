@@ -87,7 +87,7 @@ class tv3:
   infopages.append(("63", config.__language__(30052), "tv3", config.__language__(30056))) # Latest
   infopages.append(("61", config.__language__(30052), "tv3", config.__language__(30057))) # Most Watched
   infopages.append(("64", config.__language__(30052), "tv3", config.__language__(30058))) # Expiring soon
-  infopages.append(("70", config.__language__(30052), "atoz", "A - Z"))
+  #infopages.append(("70", config.__language__(30052), "atoz", "A - Z")) # Now empty
   infopages.append(("71", config.__language__(30053), "tv3", "TV3"))
   infopages.append(("72", config.__language__(30053), "c4tv", "FOUR"))
   infopages.append(("65", config.__language__(30054), "tv3", config.__language__(30059))) # Comedy
@@ -212,14 +212,14 @@ class tv3:
    self._search(results, "58")
 
  def _search(self, searchterm, catid): #Show video items from a normal TV3 webpage
-  page = webpage("%s/search/tabid/%s/Default.aspx?amq=%s" % (self.urls['base'], catid, searchterm.replace(" ", "+")))
+  page = webpage("%s/search/tabid/%s/Default.aspx?amq=%s" % (self._base_url('tv3'), catid, searchterm.replace(" ", "+")))
   if page.doc:
    a_tag=SoupStrainer('div')
    html_atag = BeautifulSoup(page.doc, parseOnlyThese = a_tag)
    programs = html_atag.findAll(attrs={"class": "results"})
    if len(programs) > 0:
     for soup in programs:
-     self.xbmcitems.items.append(_searchitem(soup, "tv3"))
+     self.xbmcitems.items.append(self._searchitem(soup, "tv3"))
     self.xbmcitems.addall()
    else:
     sys.stderr.write("Couldn't find any videos")
@@ -233,7 +233,7 @@ class tv3:
   title = soup.find("div", attrs={"class": 'catTitle'})
   if title:
    info["TVShowTitle"] = title.a.string.strip()
-   href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["VIDEO1"], self.urls["VIDEO2"], self.urls["VIDEO3"]), title.a['href'])
+   href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["video1"], self.urls["video2"], self.urls["video3"]), title.a['href'])
    image = soup.find("img")
    if image:
     info["Thumb"] = image['src']
@@ -244,8 +244,7 @@ class tv3:
    date = soup.find("div", attrs={"class": 'epDate'})
  #  if date:
  #   sys.stderr.write(date.span[1].string.strip())
-   info.titleplot()
-   info["Count"] = count
+   item.titleplot()
    #info["FileName"] = "%s?ch=TV3&id=%s&info=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), urllib.quote(str(info)))
    info["FileName"] = "%s?ch=TV3&id=%s&provider=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
    #info["FileName"] = self._geturl("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
@@ -256,14 +255,13 @@ class tv3:
   item = tools.xbmcItem(False)
   info = item.info
   #info["Studio"] = provider
-  sys.stderr.write(baseurl)
   link = soup.find("a", attrs={"href": re.compile(baseurl)})
   if link:
    href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["video1"], self.urls["video2"], self.urls["video3"]), link['href'])
    if href:
     if link.string:
      title = link.string.strip()
-     if title <> "":
+     if title != "" and title[0:7] != "rotator":
       info["TVShowTitle"] = title
       image = soup.find("img", attrs={"src": re.compile(self.urls["img_re"]), "title": True})
       if image:
