@@ -228,7 +228,7 @@ class tv3:
 
  def _searchitem(self, soup, provider): # Scrape items from a table-style HTML page
   baseurl = self._base_url(provider)
-  item = tools.xbmcItem()
+  item = tools.xbmcItem(False)
   info = item.info
   title = soup.find("div", attrs={"class": 'catTitle'})
   if title:
