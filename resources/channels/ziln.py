@@ -6,6 +6,7 @@ import xbmcgui, xbmcplugin, xbmcaddon
 
 import resources.tools as tools
 import resources.config as config
+settings = config.__settings__
 from resources.tools import webpage
 
 

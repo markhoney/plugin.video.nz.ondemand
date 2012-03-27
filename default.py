@@ -119,6 +119,8 @@ if params:
     nzonscreen.search()
    else:
     nzonscreen.index(urllib.unquote(params["filter"][0]))
+  elif params.get("bitrates", "") <> "":
+   nzonscreen.bitrates(params["bitrates"][0])
   elif params.get("title", "") <> "":
    nzonscreen.play(params["title"][0])
   else:

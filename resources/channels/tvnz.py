@@ -8,6 +8,7 @@ import xbmc, xbmcgui, xbmcplugin, xbmcaddon
 
 import resources.tools as tools
 import resources.config as config
+settings = config.__settings__
 from resources.tools import webpage
 
 # http://tvnz.co.nz/ondemand/xl 
@@ -168,55 +169,66 @@ class tvnz:
    info["Title"] = " ".join((title, sxe, subtitle)) #subtitle
    info["Thumb"] = ep.attributes["src"].value
    #info["FileName"] = "%s?ch=%s&type=video&id=%s&info=%s" % (self.base, self.channel, link, urllib.quote(str(info)))
-   info["FileName"] = "%s?ch=%s&type=video&id=%s" % (self.base, self.channel, link)
+   #info["FileName"] = "%s?ch=%s&type=video&id=%s" % (self.base, self.channel, link)
    #info["FileName"] = self._geturl(link)
+   info["FileName"] = self._geturl(link, False)
    return item
   return False
 
- def play(self, id):
+ def play(self, id): #, info
   item = tools.xbmcItem(False)
   info = item.info
   info["Title"] = ""
-  info["FileName"] = self._geturl(id)
+  info["FileName"] = self._geturl(id, True)
   item.path = info["FileName"]
   self.xbmcitems.add(item, 1)
 
- def _geturl(self, id):
+ def bitrates(self, id): #, info
+  #self.xbmcitems.addurls(self._videourls(id))
+  for bitrate, url in self._videourls(id).iteritems():
+   item = tools.xbmcItem(False)
+   info = item.info
+   info['Title'] = str(bitrate) + 'MB'
+   info['FileName'] = item.stack(url)
+   self.xbmcitems.items.append(item)
+  self.xbmcitems.addall()
+
+ def _geturl(self, id, play):
+  if settings.getSetting('%s_quality_play' % self.channel) == 'true':
+   return "%s?ch=%s&bitrates=%s" % (self.base, self.channel, id) #self.xbmcitems.addurls(self._videourls(id))
+  elif play:
+   return self.xbmcitems.url(self._videourls(id), settings.getSetting('%s_quality' % self.channel))
+  else:
+   return "%s?ch=%s&type=video&id=%s" % (self.base, self.channel, id)
+
+ def _videourls(self, id):
   page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
   if page.doc:
    xml = self._xml(page.doc)
    if xml:
     urls = dict()
-    allurls = dict()
     for chapter in xml.getElementsByTagName('seq'):
      for video in chapter.getElementsByTagName('video'):
       bitrate = int(video.attributes["systemBitrate"].value)
-      allurls[bitrate] = list()
+      urls[bitrate] = list()
+    for chapter in xml.getElementsByTagName('seq'):
      for video in chapter.getElementsByTagName('video'):
       bitrate = int(video.attributes["systemBitrate"].value)
       url = video.attributes["src"].value
-      if url[:7] == 'http://':
-       # easy case - we have an http URL
-       allurls[bitrate].append(url)
-       sys.stderr.write("HTTP URL: " + url)
-      elif url[:5] == 'rtmp:':
-       # rtmp case
+      if url[:7] == 'http://': # easy case - we have an http URL
+       urls[bitrate].append(url)
+       #print "HTTP URL: " + url
+      elif url[:5] == 'rtmp:': # rtmp case
        rtmp_url = "rtmpe://fms-streaming.tvnz.co.nz/tvnz.co.nz"
        playpath = " playpath=" + url[5:]
        flashversion = " flashVer=MAC%2010,0,32,18"
        swfverify = " swfurl=http://tvnz.co.nz/stylesheets/tvnz/entertainment/flash/ondemand/player.swf swfvfy=true"
        conn = " conn=S:-720"
-       allurls.append
-       allurls[bitrate].append(url)
-       sys.stderr.write("RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn)
-    maxbitrate = 0
-    for bitrate, urls in allurls.iteritems():
-     #item.urls[bitrate] = item.stack(urls)
-     urls[bitrate] = item.stack(urls)
-     if bitrate > maxbitrate:
-      maxbitrate = bitrate
-    return urls[maxbitrate]
-
+       urls[bitrate].append(url)
+       #print "RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn
+      else:
+       return False
+    return urls
 
  def advert(self, chapter):
   advert = chapter.getElementsByTagName('ref')

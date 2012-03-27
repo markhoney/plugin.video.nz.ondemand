@@ -128,8 +128,8 @@ class xbmcItems:
   # http://xbmc.sourceforge.net/python-docs/xbmcgui.html#ListItem
   if hasattr(item, 'info'):
    info = item.info
-   #if hasattr(info, 'FileNames'):
-   if info["FileName"]:
+   #if hasattr(info, 'FileName'):
+   if 'FileName' in info:
     liz = xbmcgui.ListItem(label = info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
     try:
      fanart = item.fanart
@@ -147,6 +147,8 @@ class xbmcItems:
       self.message("Couldn't play item.")
     else:
      return xbmcplugin.addDirectoryItem(handle = config.__id__, url = info["FileName"], listitem = liz, isFolder = item.folder, totalItems = total)
+   else:
+    sys.stderr.write("No FileName given")
 
  def addall(self):
   total = len(self.items)
@@ -154,14 +156,29 @@ class xbmcItems:
    self.add(item, total)
   self._sort()
 
-  def addurls(self, urls):
-   total = len(urls)
-   for bitrate, url in urls:
-    item = xbmcItem(False)
-    item.info['Title'] = str(bitrate)
-    item.info['Filename'] = item.stack(urls)
-    self.add(item, total)
-   self._sort()
+ def addurls(self, urls):
+  total = len(urls)
+  for bitrate, url in urls.iteritems():
+   item = xbmcItem(False)
+   item.info['Title'] = str(bitrate)
+   item.info['FileName'] = item.stack(url)
+   #print item.info['FileName']
+   #self.add(item, total)
+  #self._sort()
+   self.items.append(item)
+  self.addall()
+
+ def urls(self, urls):
+  total = len(urls)
+  for bitrate, url in urls.iteritems():
+   item = xbmcItem(False)
+   item.info['Title'] = str(bitrate)
+   item.info['FileName'] = item.stack(url)
+   #print item.info['FileName']
+   #self.add(item, total)
+  #self._sort()
+   self.items.append(item)
+  self.addall()
 
  def _sort(self):
   import xbmcplugin

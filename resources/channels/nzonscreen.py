@@ -104,7 +104,10 @@ class nzonscreen:
      for row in rows:
       cells = row.findAll('td')
       if len(cells) > 0:
-       item = tools.xbmcItem(False)
+       if settings.getSetting('NZOnScreen_quality_play') == 'true':
+        item = tools.xbmcItem()
+       else:
+        item = tools.xbmcItem(False)
        info = item.info
        for cell in cells:
         if cell['class'] == 'image':
@@ -142,12 +145,21 @@ class nzonscreen:
   item.path = info["FileName"]
   self.xbmcitems.add(item, 1)
 
- def qualities(self, title): #, info
-  self.xbmcitems.addurls(self._videourls(title))
+ def bitrates(self, title): #, info
+  #self.xbmcitems.addurls(self._videourls(title))
+  for bitrate, url in self._videourls(title).iteritems():
+   item = tools.xbmcItem(False)
+   info = item.info
+   info['Title'] = str(bitrate) + 'MB'
+   info['FileName'] = item.stack(url)
+   self.xbmcitems.items.append(item)
+  self.xbmcitems.addall()
 
  def _geturl(self, title, play):
-  if play:
-   return self.xbmcitems.url(self._videourls(title), settings.getSetting('NZOnScreen_quality'))
+  if settings.getSetting('%s_quality_play' % self.channel) == 'true':
+   return "%s?ch=%s&bitrates=%s" % (self.base, self.channel, title) #self.xbmcitems.addurls(self._videourls(title))
+  elif play:
+   return self.xbmcitems.url(self._videourls(title), settings.getSetting('%s_quality' % self.channel))
   else:
    return "%s?ch=%s&title=%s" % (self.base, self.channel, title)
 
@@ -173,7 +185,8 @@ class nzonscreen:
      allurls[bitrate].append(video[bitrate + '_res'])
      filesizes[bitrate] = filesizes[bitrate] + video[bitrate + '_res_mb']
    for bitrate, urls in allurls.iteritems():
-    returnurls[str(filesizes[bitrate])] = urls
+    #returnurls[str(filesizes[bitrate])] = urls
+    returnurls[filesizes[bitrate]] = urls
    return returnurls
 #   for bitrate, urls in allurls.iteritems():
 #    item.urls[bitrate] = item.stack(urls)
