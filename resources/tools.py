@@ -15,10 +15,11 @@ import xbmcplugin # http://xbmc.sourceforge.net/python-docs/xbmcplugin.html
 # os.mkdir(__cache__)
 
 class webpage:
- def __init__(self, url = "", agent = 'ps3', cookie = ""):
+ def __init__(self, url = "", agent = 'ps3', cookie = "", type = ""):
   self.doc = ""
   self.agent = agent
   self.cookie = cookie
+  self.type = type
   if url:
    self.url = url
    self.get(url)
@@ -31,7 +32,9 @@ class webpage:
   req = urllib2.Request(url)
   req.add_header('User-agent', self.fullagent(self.agent))
   if self.cookie:
-   req.add_header('Cookie', self.cookie) # 'nzos_html5=true' for NZOnScreen
+   req.add_header('Cookie', self.cookie)
+  if self.type:
+   req.add_header('content-type', self.type)
   try:
    response = urllib2.urlopen(req, timeout = 20)
    self.doc = response.read()
@@ -128,7 +131,6 @@ class xbmcItems:
   # http://xbmc.sourceforge.net/python-docs/xbmcgui.html#ListItem
   if hasattr(item, 'info'):
    info = item.info
-   #if hasattr(info, 'FileName'):
    if 'FileName' in info:
     liz = xbmcgui.ListItem(label = info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
     try:
@@ -199,12 +201,13 @@ class xbmcItems:
   return False
 
  def url(self, urls, quality = 'High'): # Low, Medium, High
-  if quality == 'Medium' and len(self.urls) > 2:
-   del urls[max(urls.keys())]
-  if quality == 'Low':
-   return self.stack(urls[min(urls.keys())])
-  else:
-   return self.stack(urls[max(urls.keys())])
+  if quality in ['High', 'Medium', 'Low'] and len(urls) > 0:
+   if quality == 'Medium' and len(urls) > 2:
+    del urls[max(urls.keys())]
+   if quality == 'Low':
+    return self.stack(urls[min(urls.keys())])
+   else:
+    return self.stack(urls[max(urls.keys())])
 
  def stack(self, urls): #Build a URL stack from multiple URLs for the XBMC player
   if len(urls) == 1:

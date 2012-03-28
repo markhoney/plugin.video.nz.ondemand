@@ -25,6 +25,16 @@ class tvnz:
   self.urls['play'] = 'ta_ent_smil_skin.smil?platform=PS3'
   self.urls['episodes'] = '_episodes_group'
   self.urls['extras'] = '_extras_group'
+  self.urls['const'] = 'f86d6617a68b38ee0f400e1f4dc603d6e3b4e4ed'
+  self.urls['playerKey'] = 'AQ~~,AAAA4FQHurk~,l-y-mylVvQmMeQArl3N6WrFttyxCZNYX'
+  self.urls['playerID'] = 1029272630001
+  self.urls['publisherID'] = 963482467001
+#  self.urls['const'] = 'c533b8ff14118661efbd88d7be2520a0427d3b62'
+#  self.urls['playerKey'] = 'AQ~~,AAAA4FQHurk~,l-y-mylVvQmMeQArl3N6WrFttyxCZNYX'
+#  self.urls['playerID'] = '1257248093001'
+#  self.urls['publisherID'] = '963482467001'
+  self.urls['swfUrl'] = 'http://admin.brightcove.com/viewer/us20120326.1500/federatedSlim/BrightcovePlayer.swf'
+  
   self.bitrate_min = 400000
   self.xbmcitems = tools.xbmcItems()
   self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
@@ -179,19 +189,23 @@ class tvnz:
   item = tools.xbmcItem(False)
   info = item.info
   info["Title"] = ""
-  info["FileName"] = self._geturl(id, True)
-  item.path = info["FileName"]
-  self.xbmcitems.add(item, 1)
+  url = self._geturl(id, True)
+  if url:
+   info["FileName"] = url
+   item.path = info["FileName"]
+   self.xbmcitems.add(item, 1)
 
  def bitrates(self, id): #, info
   #self.xbmcitems.addurls(self._videourls(id))
-  for bitrate, url in self._videourls(id).iteritems():
-   item = tools.xbmcItem(False)
-   info = item.info
-   info['Title'] = str(bitrate) + 'MB'
-   info['FileName'] = item.stack(url)
-   self.xbmcitems.items.append(item)
-  self.xbmcitems.addall()
+  urls = self._videourls(id)
+  if urls:
+   for bitrate, url in urls.iteritems():
+    item = tools.xbmcItem(False)
+    info = item.info
+    info['Title'] = str(bitrate) + 'MB'
+    info['FileName'] = item.stack(url)
+    self.xbmcitems.items.append(item)
+   self.xbmcitems.addall()
 
  def _geturl(self, id, play):
   if settings.getSetting('%s_quality_play' % self.channel) == 'true':
@@ -218,17 +232,51 @@ class tvnz:
       if url[:7] == 'http://': # easy case - we have an http URL
        urls[bitrate].append(url)
        #print "HTTP URL: " + url
-      elif url[:5] == 'rtmp:': # rtmp case
-       rtmp_url = "rtmpe://fms-streaming.tvnz.co.nz/tvnz.co.nz"
-       playpath = " playpath=" + url[5:]
-       flashversion = " flashVer=MAC%2010,0,32,18"
-       swfverify = " swfurl=http://tvnz.co.nz/stylesheets/tvnz/entertainment/flash/ondemand/player.swf swfvfy=true"
-       conn = " conn=S:-720"
-       urls[bitrate].append(url)
+#      elif url[:5] == 'rtmp:': # rtmp case
+#       rtmp_url = "rtmpe://fms-streaming.tvnz.co.nz/tvnz.co.nz"
+#       playpath = " playpath=" + url[5:]
+#       flashversion = " flashVer=MAC%2010,0,32,18"
+#       swfverify = " swfurl=http://tvnz.co.nz/stylesheets/tvnz/entertainment/flash/ondemand/player.swf swfvfy=true"
+#       conn = " conn=S:-720"
+#       urls[bitrate].append(url)
        #print "RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn
-      else:
-       return False
-    return urls
+    if len(urls) > 0:
+     return urls
+    rtmpdata = self.get_clip_info(self.urls['const'], self.urls['playerID'], id, self.urls['publisherID'])
+    #rtmpdata = self.get_clip_info(self.urls['const'], self.urls['playerID'], 'blah', self.urls['publisherID'])
+    print rtmpdata['FLVFullLengthURL']
+    #self.xbmcitems.message("Sorry, TVNZ RTMP URLs are not supported yet")
+
+ def get_clip_info(self, const, playerID, videoPlayer, publisherID):
+  from pyamf import AMF0, AMF3
+  from pyamf import remoting
+  from pyamf.remoting.client import RemotingService
+  import httplib
+  conn = httplib.HTTPConnection("c.brightcove.com")
+  envelope = remoting.Envelope(amfVersion=3)
+  envelope.bodies.append(("/1", remoting.Request(target="com.brightcove.player.runtime.PlayerMediaFacade.findMediaById", body=[const, playerID, videoPlayer, publisherID], envelope=envelope)))
+  #envelope = self.build_amf_request(const, playerID, videoPlayer, publisherID)
+  import pprint
+  pp = pprint.PrettyPrinter()
+  pp.pprint(remoting.encode(envelope).read())
+  conn.request("POST", "/services/messagebroker/amf?playerKey=" + self.urls['playerKey'], str(remoting.encode(envelope).read()), {'content-type': 'application/x-amf'})
+  #conn.request("POST", "/services/messagebroker/amf?playerID=" + str(self.urls['playerID']), str(remoting.encode(envelope).read()), {'content-type': 'application/x-amf'})
+  response = conn.getresponse().read()
+  print "Response:"
+  pp.pprint(response)
+  response = remoting.decode(response).bodies[0][1].body
+  print "Response:"
+  pp.pprint(response)
+  return response
+  #return remoting.decode(conn.getresponse().read()).bodies[0][1].body
+
+ def build_amf_request(self, const, playerID, videoPlayer, publisherID):
+  from pyamf import AMF0, AMF3
+  from pyamf import remoting
+  from pyamf.remoting.client import RemotingService
+  env = remoting.Envelope(amfVersion=3)
+  env.bodies.append(("/1", remoting.Request(target="com.brightcove.player.runtime.PlayerMediaFacade.findMediaById", body=[const, playerID, videoPlayer, publisherID], envelope=env)))
+  return env
 
  def advert(self, chapter):
   advert = chapter.getElementsByTagName('ref')

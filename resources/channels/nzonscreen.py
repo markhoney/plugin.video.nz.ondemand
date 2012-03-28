@@ -125,7 +125,7 @@ class nzonscreen:
          pass
         elif cell['class'] == 'added':
          info["Date"] = tools.xbmcdate(cell.contents[0], ".")
-       if info['FileName']:
+       if 'FileName' in info:
         self.xbmcitems.items.append(item)
      self.xbmcitems.addall()
 
