@@ -11,8 +11,6 @@ import resources.config as config
 settings = config.__settings__
 from resources.tools import webpage
 
-# http://tvnz.co.nz/ondemand/xl 
-
 class tvnz:
  def __init__(self):
   self.base = sys.argv[0]
@@ -25,15 +23,18 @@ class tvnz:
   self.urls['play'] = 'ta_ent_smil_skin.smil?platform=PS3'
   self.urls['episodes'] = '_episodes_group'
   self.urls['extras'] = '_extras_group'
-  self.urls['const'] = 'f86d6617a68b38ee0f400e1f4dc603d6e3b4e4ed'
   self.urls['playerKey'] = 'AQ~~,AAAA4FQHurk~,l-y-mylVvQmMeQArl3N6WrFttyxCZNYX'
-  self.urls['playerID'] = 1029272630001
+  #self.urls['playerKey'] = 'AQ%7E%7E%2CAAAA4FQHurk%7E%2Cl-y-mylVvQmMeQArl3N6WrFttyxCZNYX'
   self.urls['publisherID'] = 963482467001
-#  self.urls['const'] = 'c533b8ff14118661efbd88d7be2520a0427d3b62'
-#  self.urls['playerKey'] = 'AQ~~,AAAA4FQHurk~,l-y-mylVvQmMeQArl3N6WrFttyxCZNYX'
-#  self.urls['playerID'] = '1257248093001'
-#  self.urls['publisherID'] = '963482467001'
-  self.urls['swfUrl'] = 'http://admin.brightcove.com/viewer/us20120326.1500/federatedSlim/BrightcovePlayer.swf'
+# http://tvnz.co.nz/video
+  #self.urls['const'] = 'f86d6617a68b38ee0f400e1f4dc603d6e3b4e4ed'
+  #self.urls['playerID'] = 1029272630001
+# http://tvnz.co.nz/ondemand/xl
+  self.urls['const'] = 'c533b8ff14118661efbd88d7be2520a0427d3b62'
+  self.urls['playerID'] = 1257248093001
+  self.urls['PS3'] = 'http://tvnz.co.nz/ondemand/xl'
+  #self.urls['PS3'] = 'http://tvnz.co.nz/stylesheets/ps3/entertainment/flash/ps3Flash.swf'
+  self.urls['swfUrl'] = 'http://admin.brightcove.com/viewer/us20120607.1317/federatedSlim/BrightcovePlayer.swf'
   
   self.bitrate_min = 400000
   self.xbmcitems = tools.xbmcItems()
@@ -54,6 +55,12 @@ class tvnz:
     return document.documentElement
   sys.stderr.write("No XML Data")
   return False
+
+ #def index(self):
+ # from brightcove import api
+ # brightcove = api.Brightcove(self.urls['playerKey'])
+ # print brightcove.find_all_videos().items[0]
+  
 
  def index(self):
   page = webpage(self.url("ps3_navigation")) # http://tvnz.co.nz/content/ps3_navigation/ps3_xml_skin.xml
@@ -242,41 +249,39 @@ class tvnz:
        #print "RTMP URL: " + rtmp_url + playpath + flashversion + swfverify + conn
     if len(urls) > 0:
      return urls
-    rtmpdata = self.get_clip_info(self.urls['const'], self.urls['playerID'], id, self.urls['publisherID'])
-    #rtmpdata = self.get_clip_info(self.urls['const'], self.urls['playerID'], 'blah', self.urls['publisherID'])
-    print rtmpdata['FLVFullLengthURL']
+    experienceID = int(re.compile(';sid=([0-9]+);').findall(page.doc)[0])
+    contentURL = "http://tvnz.co.nz/" + xml.getElementsByTagName('meta')[0].attributes['content'].value.split('/')[0] + "/video"
+    rtmpdata = self.get_clip_info(int(id), experienceID, contentURL)
+    print rtmpdata['programmedContent']['videoPlayer']['mediaDTO']['renditions'][0]['defaultURL']
     #self.xbmcitems.message("Sorry, TVNZ RTMP URLs are not supported yet")
 
- def get_clip_info(self, const, playerID, videoPlayer, publisherID):
-  from pyamf import AMF0, AMF3
+
+ def get_clip_info(self, contentID, experienceID, url):
+  #import pyamf
+  from pyamf import register_class
   from pyamf import remoting
-  from pyamf.remoting.client import RemotingService
   import httplib
   conn = httplib.HTTPConnection("c.brightcove.com")
-  envelope = remoting.Envelope(amfVersion=3)
-  envelope.bodies.append(("/1", remoting.Request(target="com.brightcove.player.runtime.PlayerMediaFacade.findMediaById", body=[const, playerID, videoPlayer, publisherID], envelope=envelope)))
-  #envelope = self.build_amf_request(const, playerID, videoPlayer, publisherID)
+  register_class(ContentOverride, 'com.brightcove.experience.ContentOverride')
+  content_override = ContentOverride(contentID)
+  register_class(ViewerExperienceRequest, 'com.brightcove.experience.ViewerExperienceRequest')
+  #viewer_exp_req = ViewerExperienceRequest(self.urls['PS3'], [content_override], contentID, self.urls['playerKey'])
+  viewer_exp_req = ViewerExperienceRequest(url, [content_override], contentID, self.urls['playerKey'])
+  env = remoting.Envelope(amfVersion = 3)
+  #env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.player.runtime.PlayerMediaFacade.findMediaById", body = [self.urls['const'], self.urls['playerID'], contentID, self.urls['publisherID']], envelope = env)))
+  #env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.experience.ExperienceRuntimeFacade.getProgrammingWithOverrides", body = [self.urls['const'], self.urls['playerID'], [content_override]], envelope = env)))
+  env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.experience.ExperienceRuntimeFacade.getDataForExperience", body = [self.urls['const'], viewer_exp_req], envelope = env)))
+  #print remoting.encode(env)
+  conn.request("POST", "/services/messagebroker/amf?playerKey=" + self.urls['playerKey'], str(remoting.encode(env).read()), {'content-type': 'application/x-amf'})
+  #conn.request("POST", "/services/messagebroker/amf?playerID=" + str(self.urls['playerID']), str(remoting.encode(env).read()), {'content-type': 'application/x-amf'})
+  resp = conn.getresponse().read()
   import pprint
   pp = pprint.PrettyPrinter()
-  pp.pprint(remoting.encode(envelope).read())
-  conn.request("POST", "/services/messagebroker/amf?playerKey=" + self.urls['playerKey'], str(remoting.encode(envelope).read()), {'content-type': 'application/x-amf'})
-  #conn.request("POST", "/services/messagebroker/amf?playerID=" + str(self.urls['playerID']), str(remoting.encode(envelope).read()), {'content-type': 'application/x-amf'})
-  response = conn.getresponse().read()
-  print "Response:"
-  pp.pprint(response)
-  response = remoting.decode(response).bodies[0][1].body
-  print "Response:"
-  pp.pprint(response)
+  pp.pprint(resp)
+  response = remoting.decode(resp).bodies[0][1].body
+  print response
   return response
   #return remoting.decode(conn.getresponse().read()).bodies[0][1].body
-
- def build_amf_request(self, const, playerID, videoPlayer, publisherID):
-  from pyamf import AMF0, AMF3
-  from pyamf import remoting
-  from pyamf.remoting.client import RemotingService
-  env = remoting.Envelope(amfVersion=3)
-  env.bodies.append(("/1", remoting.Request(target="com.brightcove.player.runtime.PlayerMediaFacade.findMediaById", body=[const, playerID, videoPlayer, publisherID], envelope=env)))
-  return env
 
  def advert(self, chapter):
   advert = chapter.getElementsByTagName('ref')
@@ -312,3 +317,27 @@ class tvnz:
    except:
     pass
   return False
+
+class ContentOverride(object):
+ #def __init__(self, contentId, contentType = 1, target = 'videoList'):
+ def __init__(self, contentId = 0, contentType = 1, target = 'videoPlayer'):
+  self.contentType = contentType
+  self.contentId = contentId
+  self.target = target
+  self.contentIds = None
+  self.contentRefId = None
+  self.contentRefIds = None
+  #self.contentType = 1
+  self.contentType = 0
+  self.featureId = float(0)
+  self.featuredRefId = None
+
+class ViewerExperienceRequest(object):
+ def __init__(self, URL, contentOverrides, experienceId, playerKey, TTLToken = ''):
+  self.TTLToken = TTLToken
+  self.URL = URL
+  self.deliveryType = float(0)
+  self.contentOverrides = contentOverrides
+  #self.contentOverrides = []
+  self.experienceId = experienceId
+  self.playerKey = playerKey

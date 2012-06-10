@@ -3,8 +3,6 @@
 import sys, re, os
 import resources.config as config
 settings = config.__settings__
-from xml.dom import minidom
-from xml.parsers.expat import ExpatError
 # import xbmc # http://xbmc.sourceforge.net/python-docs/xbmc.html
 import xbmcgui # http://xbmc.sourceforge.net/python-docs/xbmcgui.html
 import xbmcplugin # http://xbmc.sourceforge.net/python-docs/xbmcplugin.html
@@ -46,6 +44,7 @@ class webpage:
 
  def xml(self):
   from xml.dom import minidom
+  #from xml.parsers.expat import ExpatError
   try:
    document = minidom.parseString(self.doc)
    if document:

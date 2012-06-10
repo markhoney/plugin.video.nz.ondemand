@@ -95,6 +95,9 @@ if params:
     tvnz.search()
    elif params["type"][0] == "video":
     tvnz.play(params["id"][0])
+ elif params["ch"][0] == "Prime":
+  from resources.channels.prime import prime as primeclass
+  prime = primeclass()
  elif params["ch"][0] == "Ziln":
   from resources.channels.ziln import ziln as zilnclass
   ziln = zilnclass()
@@ -131,23 +134,22 @@ if params:
  else:
   sys.stderr.write("Invalid Channel ID")
 else:
- channels = ["TV3", "TVNZ", "NZOnScreen"]
- if settings.getSetting('Ziln_hide') == "false":
-  channels.append("Ziln")
+ channels = ["TV3", "TVNZ", "Prime", "NZOnScreen", "Ziln"]
  xbmc = tools.xbmcItems()
  for channel in channels:
-  item = tools.xbmcItem()
-  item.fanart = os.path.join('extrafanart', "%s.jpg" % channel)
-  info = item.info
-  info["Title"] = channel
-  info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
-  info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
-  xbmc.items.append(item)
- if settings.getSetting('Parliament_hide') == "false":
+  if not settings.getSetting('%s_hide' % channel) == "true":
+   item = tools.xbmcItem()
+   item.fanart = os.path.join('extrafanart', "%s.jpg" % channel)
+   info = item.info
+   info["Title"] = channel
+   info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
+   info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
+   xbmc.items.append(item)
+ if not settings.getSetting('Parliament_hide') == "true":
   from resources.channels.parliament import parliament as parliamentclass
   parliament = parliamentclass()
   xbmc.items.append(parliament.item())
- if settings.getSetting('Shine_hide') == "false":
+ if not settings.getSetting('Shine_hide') == "true":
   from resources.channels.shine import shine as shineclass
   shine = shineclass()
   xbmc.items.append(shine.item())
