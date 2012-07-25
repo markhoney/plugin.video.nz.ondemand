@@ -64,7 +64,7 @@ class tv3:
   if page.doc:
    a_tag = SoupStrainer('a')
    html_atag = BeautifulSoup(page.doc, parseOnlyThese = a_tag)
-   links = html_atag.findAll(attrs={"rel": "nofollow", "href": re.compile(self.urls["CAT_RE"])}) #, "title": True
+   links = html_atag.findAll(attrs={"rel": "nofollow", "href": re.compile(self.urls["cat_re"])}) #, "title": True
    if len(links) > 0:
     for link in links:
      item = tools.xbmcItem()
@@ -74,7 +74,7 @@ class tv3:
      cat = "tv"
      if info["Title"] in {"Title (A - Z)": "atoz", "TV3 Shows": "tv3", "FOUR Shows": "c4tv"}:
       cat = cats[info["Title"]]
-     catid = re.search('%s([0-9]+)' % (self.urls["CAT_RE"]), caturl).group(1)
+     catid = re.search('%s([0-9]+)' % (self.urls["cat_re"]), caturl).group(1)
      if catid:
       info["FileName"] = "%s?ch=TV3&cat=%s&catid=%s" % (self.base, cat, catid)
       self.xbmcitems.items.append(item)
@@ -397,17 +397,19 @@ class tv3:
      if site:
       if site.group(1) <> 'TV3':
        realstudio = 'c4'
-     playlist=list()
+     playlist = list()
+     urls = dict()
      #if resources.config.__settings__.getSetting('TV3_showads') == 'true':
       #playlist.append(ad)
-     fifteen = re.search('flashvars.fifteenHundred = "yes";', page.doc)
-     seven = re.search('flashvars.sevenHundred = "yes";', page.doc)
-     if fifteen:
-      quality = "1500K"
-     elif seven:
-      quality = "700K"
+     qualities = [28, 300]
+     quality = "330" # "28K"
+     if re.search('flashvars.sevenHundred = "yes";', page.doc):
+      quality = "700"
+      qualities.append(700)
+     if re.search('flashvars.fifteenHundred = "yes";', page.doc):
+      quality = "1500"
+      qualities.append(1500)
      else:
-      quality = "330K" # "28K"
      #swfverify = ' swfUrl=%s swfVfy=true' % (videoplayer.group(1))
      #rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
      url = '%s%s/%s/%s_%s' % (self._rtmp(realstudio), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
@@ -421,10 +423,8 @@ class tv3:
        swfverify = ' swfUrl=%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), pageUrl)
       url += swfverify
      playlist.append(url)
-     if len(playlist) > 1:
-      uri = constructStackURL(playlist)
-     elif len(playlist) == 1:
-      uri = playlist[0]
+     self.xbmcitems.stack(urls)
+     uri = self.xbmcitems.stack(playlist)
      return uri
     else:
      sys.stderr.write("Couldn't get video player URL")

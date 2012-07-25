@@ -49,6 +49,9 @@ settings = config.__settings__
 
 params = cgi.parse_qs(urlparse.urlparse(sys.argv[2])[4])
 if params:
+ if params.get("item", "") <> "":
+  xbmcitems = tools.xbmcItems()
+  xbmcitems.decode(params["item"][0])
  if params["ch"][0] == "TV3":
   from resources.channels.tv3 import tv3 as tv3class
   tv3 = tv3class()

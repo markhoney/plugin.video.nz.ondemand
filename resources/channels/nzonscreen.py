@@ -104,11 +104,9 @@ class nzonscreen:
      for row in rows:
       cells = row.findAll('td')
       if len(cells) > 0:
-       if settings.getSetting('NZOnScreen_quality_play') == 'true':
-        item = tools.xbmcItem()
-       else:
-        item = tools.xbmcItem(False)
+       item = tools.xbmcItem()
        info = item.info
+       item.units = "MB"
        for cell in cells:
         if cell['class'] == 'image':
          info['Thumb'] = "%s%s" % (self.urls['base'], cell.div.div.a.img['src'])
@@ -128,6 +126,12 @@ class nzonscreen:
        if 'FileName' in info:
         self.xbmcitems.items.append(item)
      self.xbmcitems.addall()
+    else:
+     sys.stderr.write("No rows found")
+   else:
+    sys.stderr.write("Couldn't find items")
+  else:
+   sys.stderr.write("Couldn't get page")
 
  def search(self):
   import xbmc
@@ -148,7 +152,7 @@ class nzonscreen:
  def bitrates(self, title): #, info
   #self.xbmcitems.addurls(self._videourls(title))
   for bitrate, url in self._videourls(title).iteritems():
-   item = tools.xbmcItem(False)
+   item = tools.xbmcItem()
    info = item.info
    info['Title'] = str(bitrate) + 'MB'
    info['FileName'] = item.stack(url)

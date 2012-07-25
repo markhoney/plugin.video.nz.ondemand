@@ -7,12 +7,12 @@
  </category>-->
  <category label="30101">
   <!--<setting id="tv3_showads" type="bool" label="30002" default="true" />-->
-  <setting id="All_quality_play" type="bool" label="30023" default="false" />
+  <setting id="TV3_quality_choose" type="bool" label="30023" default="false" />
   <setting id="TV3_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
   <setting id="TV3_folders" type="bool"      label="30001" default="true" />
  </category>
  <category label="30102">
-  <setting id="TVNZ_quality_play" type="bool" label="30023" default="false" />
+  <setting id="TVNZ_quality_choose" type="bool" label="30023" default="false" />
   <setting id="TVNZ_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
   <!--<setting id="TVNZ_showads" type="bool"      label="30002" default="false" />-->
  </category>
@@ -24,19 +24,19 @@
  </category>-->
  <category label="30104">
   <!--<setting id="NZOnScreen_hide" type="bool" label="30021" default="false"/>-->
-  <setting id="NZOnScreen_quality_play" type="bool" label="30023" default="false" />
+  <setting id="NZOnScreen_quality_choose" type="bool" label="30023" default="false" />
   <setting id="NZOnScreen_quality" type="labelenum" label="30010" values="High|Low" default="High" visible="eq(-1,false)" />
   <!--<setting id="NZOnScreen_stream"  type="labelenum" label="30020" values="Apple Quicktime|Windows Media Player" default="Windows Media Player" />-->
  </category>
  <category label="30110">
   <!--<setting id="Parliament_hide" type="bool" label="30021" default="false"/>-->
-  <setting id="Parliament_quality_play" type="bool" label="30023" default="false" />
+  <setting id="Parliament_quality_choose" type="bool" label="30023" default="false" />
   <setting id="Parliament_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
   <!--<setting id="Parliament_stream"  type="labelenum" label="30020" values="Apple Quicktime|Windows Media Player" default="Windows Media Player" />-->
  </category>
  <category label="30111">
   <!--<setting id="Shine_hide" type="bool" label="30021" default="false" />-->
-  <setting id="Shine_quality_play" type="bool" label="30023" default="false" />
+  <setting id="Shine_quality_choose" type="bool" label="30023" default="false" />
   <setting id="Shine_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
  </category>
 </settings>
