@@ -30,13 +30,13 @@
  </category>
  <category label="30110">
   <!--<setting id="Parliament_hide" type="bool" label="30021" default="false"/>-->
-  <setting id="Parliament_quality_choose" type="bool" label="30023" default="false" />
+  <setting id="Parliament_quality_choose" type="bool" label="30024" default="false" />
   <setting id="Parliament_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
   <!--<setting id="Parliament_stream"  type="labelenum" label="30020" values="Apple Quicktime|Windows Media Player" default="Windows Media Player" />-->
  </category>
  <category label="30111">
   <!--<setting id="Shine_hide" type="bool" label="30021" default="false" />-->
-  <setting id="Shine_quality_choose" type="bool" label="30023" default="false" />
+  <setting id="Shine_quality_choose" type="bool" label="30024" default="false" />
   <setting id="Shine_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
  </category>
 </settings>

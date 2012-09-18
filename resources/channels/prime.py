@@ -12,14 +12,15 @@ class prime:
   self.urls['file2'] = '_Flash.flv'
   self.programs = dict()
   self.programs['News'] = "Prime News: First At 5:30 brings you the top news and sports stories from New Zealand and around the world."
-  self.programs['Sport'] = ""
-  self.programs['Weather'] = ""
+  self.programs['Sport'] = "Business & Sport News"
+  self.programs['Weather'] = "The Weather News"
   self.xbmcitems = tools.xbmcItems()
   self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
 
   for channel, description in self.programs.iteritems():
-   item = tools.xbmcItem(False)
+   item = tools.xbmcItem()
    info = item.info
+   item.channel = self.channel
    info['Title'] = channel
    info["Plot"] = description
    info['FileName'] = self.urls['base'] + self.urls['file1'] + channel.upper() + self.urls['file2']

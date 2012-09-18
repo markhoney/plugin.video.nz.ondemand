@@ -10,12 +10,13 @@ settings = config.__settings__
 
 class parliament:
  def item(self):
-  self.channel = 'Parliament'
+  #self.channel = 'Parliament'
   item = tools.xbmcItem()
-  item.fanart = os.path.join('extrafanart', self.channel + '.jpg')
+  item.channel = 'Parliament'
+  item.fanart = os.path.join('extrafanart', item.channel + '.jpg')
   info = item.info
-  info["Title"] = 'Parliament TV (Live Stream)'
-  info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % self.channel)
+  info["Title"] = 'Parliament TV - Live Stream'
+  info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % item.channel)
   info["Plot"] = "Parliament TV provides live broadcasts from the House of Representatives. Question time is replayed each day at 6pm and 10pm."
   info["Date"] = date.today().strftime("%d.%m.%Y")
   for quality in [56, 128, 384]:

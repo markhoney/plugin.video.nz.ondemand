@@ -409,7 +409,7 @@ class tv3:
      if re.search('flashvars.fifteenHundred = "yes";', page.doc):
       quality = "1500"
       qualities.append(1500)
-     else:
+     #else:
      #swfverify = ' swfUrl=%s swfVfy=true' % (videoplayer.group(1))
      #rtmpurl = '%s%s/%s/%s_%s' % (rtmp(info["Studio"]), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
      url = '%s%s/%s/%s_%s' % (self._rtmp(realstudio), videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)

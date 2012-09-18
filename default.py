@@ -45,6 +45,89 @@ import resources.config as config
 
 settings = config.__settings__
 
+
+def chtv3():
+ from resources.channels.tv3 import tv3 as tv3class
+ tv3 = tv3class()
+ if params.get("folder", "") <> "":
+  tv3.folderindex(params["folder"][0])
+ elif params.get("cat", "") <> "":
+  if params["cat"][0] == "tv":
+   tv3.episodes(params["catid"][0], "tv3")
+  elif params["cat"][0] == "atoz":
+   tv3.atoz(params["catid"][0], "tv3")
+  elif params["cat"][0] == "tv3":
+   tv3.episodes(params["catid"][0], "tv3")
+  elif params["cat"][0] == "c4tv":
+   tv3.episodes(params["catid"][0], "c4tv")
+  elif params["cat"][0] == "shows":
+   tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
+ elif params.get("id", "") <> "":
+  tv3.play(params["id"][0], params["provider"][0])
+ else:
+  if config.__settings__.getSetting('TV3_folders') == 'true':
+   tv3.index()
+  else:
+   tv3.index()
+	
+def chtvnz():
+ #import resources.channels.tvnz as tvnz
+ #import resources.channels.tvnz
+ #tvnz = resources.channels.tvnz.tvnz
+ from resources.channels.tvnz import tvnz as tvnzclass
+ tvnz = tvnzclass()
+ #if params.get("type", "") == "":
+ if not "type" in params:
+  tvnz.index()
+ else:
+  if params["type"][0] == "shows":
+   tvnz.episodes(params["id"][0])
+  elif params["type"][0] == "singleshow":
+   tvnz.episodes(params["id"][0])
+  elif params["type"][0] == "alphabetical":
+   tvnz.show(params["id"][0])
+  elif params["type"][0] == "distributor":
+   tvnz.SHOW_DISTRIBUTORS(params["id"][0])
+   tools.addsorting(["label"], "tvshows")
+  elif params["type"][0] == "search":
+   tvnz.search()
+  elif params["type"][0] == "video":
+   tvnz.play(params["id"][0])
+   
+def chziln():
+ from resources.channels.ziln import ziln as zilnclass
+ ziln = zilnclass()
+ if params.get("folder", "") <> "":
+  if params["folder"][0] == "channels":
+   ziln.programmes("channel", "")
+  elif params["folder"][0] == "search":
+   ziln.search()
+ elif params.get("channel", "") <> "":
+  ziln.programmes("video", params["channel"][0])
+ elif params.get("video", "") <> "":
+  ziln.play(params["video"][0])
+ else:
+  ziln.index()
+
+def chnzonscreen():
+ from resources.channels.nzonscreen import nzonscreen as nzonscreenclass
+ nzonscreen = nzonscreenclass()
+ if params.get("page", "") <> "":
+  nzonscreen.page(urllib.unquote(params["filter"][0]), params["page"][0])
+ elif params.get("filter", "") <> "":
+  if params["filter"][0] == "search":
+   nzonscreen.search()
+  else:
+   nzonscreen.index(urllib.unquote(params["filter"][0]))
+ elif params.get("bitrates", "") <> "":
+  nzonscreen.bitrates(params["bitrates"][0])
+ elif params.get("title", "") <> "":
+  nzonscreen.play(params["title"][0])
+ else:
+  nzonscreen.index()
+
+
+
 # Decide what to run based on the plugin URL
 
 params = cgi.parse_qs(urlparse.urlparse(sys.argv[2])[4])
@@ -52,93 +135,26 @@ if params:
  if params.get("item", "") <> "":
   xbmcitems = tools.xbmcItems()
   xbmcitems.decode(params["item"][0])
- if params["ch"][0] == "TV3":
-  from resources.channels.tv3 import tv3 as tv3class
-  tv3 = tv3class()
-  if params.get("folder", "") <> "":
-   tv3.folderindex(params["folder"][0])
-  elif params.get("cat", "") <> "":
-   if params["cat"][0] == "tv":
-    tv3.episodes(params["catid"][0], "tv3")
-   elif params["cat"][0] == "atoz":
-    tv3.atoz(params["catid"][0], "tv3")
-   elif params["cat"][0] == "tv3":
-    tv3.episodes(params["catid"][0], "tv3")
-   elif params["cat"][0] == "c4tv":
-    tv3.episodes(params["catid"][0], "c4tv")
-   elif params["cat"][0] == "shows":
-    tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
-  elif params.get("id", "") <> "":
-   tv3.play(params["id"][0], params["provider"][0])
-  else:
-   if config.__settings__.getSetting('TV3_folders') == 'true':
-    tv3.index()
-   else:
-    tv3.index()
- elif params["ch"][0] == "TVNZ":
-  #import resources.channels.tvnz as tvnz
-  #import resources.channels.tvnz
-  #tvnz = resources.channels.tvnz.tvnz
-  from resources.channels.tvnz import tvnz as tvnzclass
-  tvnz = tvnzclass()
-  #if params.get("type", "") == "":
-  if not "type" in params:
-   tvnz.index()
-  else:
-   if params["type"][0] == "shows":
-    tvnz.episodes(params["id"][0])
-   elif params["type"][0] == "singleshow":
-    tvnz.episodes(params["id"][0])
-   elif params["type"][0] == "alphabetical":
-    tvnz.show(params["id"][0])
-   elif params["type"][0] == "distributor":
-    tvnz.SHOW_DISTRIBUTORS(params["id"][0])
-    tools.addsorting(["label"], "tvshows")
-   elif params["type"][0] == "search":
-    tvnz.search()
-   elif params["type"][0] == "video":
-    tvnz.play(params["id"][0])
- elif params["ch"][0] == "Prime":
-  from resources.channels.prime import prime as primeclass
-  prime = primeclass()
- elif params["ch"][0] == "Ziln":
-  from resources.channels.ziln import ziln as zilnclass
-  ziln = zilnclass()
-  if params.get("folder", "") <> "":
-   if params["folder"][0] == "channels":
-    ziln.programmes("channel", "")
-   elif params["folder"][0] == "search":
-    ziln.search()
-  elif params.get("channel", "") <> "":
-   ziln.programmes("video", params["channel"][0])
-  elif params.get("video", "") <> "":
-   ziln.play(params["video"][0])
-  else:
-   ziln.index()
- elif params["ch"][0] == "NZOnScreen":
-  from resources.channels.nzonscreen import nzonscreen as nzonscreenclass
-  nzonscreen = nzonscreenclass()
-  if params.get("page", "") <> "":
-   nzonscreen.page(urllib.unquote(params["filter"][0]), params["page"][0])
-  elif params.get("filter", "") <> "":
-   if params["filter"][0] == "search":
-    nzonscreen.search()
-   else:
-    nzonscreen.index(urllib.unquote(params["filter"][0]))
-  elif params.get("bitrates", "") <> "":
-   nzonscreen.bitrates(params["bitrates"][0])
-  elif params.get("title", "") <> "":
-   nzonscreen.play(params["title"][0])
-  else:
-   nzonscreen.index()
-# elif params["ch"][0] == "iSKY":
-#  import isky
-#  isky.INDEX()
  else:
-  sys.stderr.write("Invalid Channel ID")
+  if params["ch"][0] == "TV3":
+   chtv3()
+  elif params["ch"][0] == "TVNZ":
+   chtvnz()
+  elif params["ch"][0] == "Ziln":
+   chziln()
+  elif params["ch"][0] == "NZOnScreen":
+   chnzonscreen()
+# elif params["ch"][0] == "iSKY":
+# elif params["ch"][0] == "Quickflix":
+# elif params["ch"][0] == "IGLOO":
+  elif params["ch"][0] == "Prime":
+   from resources.channels.prime import prime as primeclass
+   prime = primeclass()
+  else:
+   sys.stderr.write("Invalid Channel ID")
 else:
  channels = ["TV3", "TVNZ", "Prime", "NZOnScreen", "Ziln"]
- xbmc = tools.xbmcItems()
+ xbmcitems = tools.xbmcItems()
  for channel in channels:
   if not settings.getSetting('%s_hide' % channel) == "true":
    item = tools.xbmcItem()
@@ -147,14 +163,15 @@ else:
    info["Title"] = channel
    info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
    info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
-   xbmc.items.append(item)
+   xbmcitems.items.append(item)
  if not settings.getSetting('Parliament_hide') == "true":
   from resources.channels.parliament import parliament as parliamentclass
   parliament = parliamentclass()
-  xbmc.items.append(parliament.item())
+  xbmcitems.items.append(parliament.item())
  if not settings.getSetting('Shine_hide') == "true":
   from resources.channels.shine import shine as shineclass
   shine = shineclass()
-  xbmc.items.append(shine.item())
- xbmc.sorting.append('UNSORTED')
- xbmc.addall()
+  xbmcitems.items.append(shine.item())
+ xbmcitems.sorting.append('UNSORTED')
+ xbmcitems.addall()
+

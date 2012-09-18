@@ -11,6 +11,7 @@
   <string id="30021">Hide This Channel</string>
   <string id="30022">Override Channel Quality</string>
   <string id="30023">Choose Bandwidth per Program</string>
+  <string id="30024">Choose Bandwidth when Playing</string>
 
   <string id="30052">Categories</string>
   <string id="30053">Channels</string>
@@ -35,4 +36,5 @@
   <string id="30105">iSky</string>
   <string id="30110">Parliament</string>
   <string id="30111">Shine</string>
+  <string id="30111">Prime</string>
 </strings>

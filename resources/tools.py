@@ -80,6 +80,7 @@ class xbmcItem:
   self.info["Thumb"] = ""
   self.urls = dict()
   self.units = "kbps"
+  self.channel = ""
 
  def applyURL(self, bitrate):
   if bitrate in self.urls:
@@ -118,6 +119,7 @@ class xbmcItem:
  def encode(self):
   #return urllib.quote(str(self))
   import pickle
+  import urllib
   return urllib.quote(pickle.dumps(self))
 
 
@@ -137,6 +139,10 @@ class xbmcItems:
   # http://xbmc.sourceforge.net/python-docs/xbmcgui.html#ListItem
   if hasattr(item, 'info'):
    info = item.info
+   try:
+    channel = item.channel
+   except:
+    channel = self.channel
    if 'FileName' in info or len(item.urls) > 0:
     itemFolder = False
     liz = xbmcgui.ListItem(label = info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
@@ -147,10 +153,11 @@ class xbmcItems:
      itemFolder = True
      info['FileName'] = item.urls.itervalues().next()
     else:
-     if settings.getSetting('%s_quality_choose' % self.channel) == 'true':
-      info['FileName'] = '%s/ch=%s&item=%s' % (sys.argv[0], self.channel, item.encode())
+     if settings.getSetting('%s_quality_choose' % channel) == 'true':
+      itemFolder = True
+      info['FileName'] = '%s?ch=%s&item=%s' % (sys.argv[0], channel, item.encode())
      else:
-	  info['FileName'] = self._quality(item.urls, settings.getSetting('%s_quality' % self.channel))
+	  info['FileName'] = self._quality(item.urls, settings.getSetting('%s_quality' % channel))
     try:
      fanart = item.fanart
     except:
@@ -159,7 +166,6 @@ class xbmcItems:
     liz.setInfo(type = "video", infoLabels = info)
     if not itemFolder:
      liz.setProperty("IsPlayable", "true")
-    self.message("Channel ")
     if total == 1:
      liz.setPath(item.path)
      try:
@@ -179,15 +185,18 @@ class xbmcItems:
 
  def decode(self, item):
   import pickle
-  return pickle.loads(urllib.unquote(item))
+  import urllib
+  #return pickle.loads(urllib.unquote(item))
+  self.bitrates(pickle.loads(urllib.unquote(item)))
 
  def bitrates(self, sourceitem):
   total = len(sourceitem.urls)
   for bitrate, url in sourceitem.urls.iteritems():
-   item = xbmcItem(False)
-   item.info = sourceitem.info
+   item = xbmcItem()
+   item.fanart = sourceitem.fanart
+   item.info = sourceitem.info.copy()
    item.info['Title'] += " (" + str(bitrate) + " " + sourceitem.units + ")"
-   item.info['FileName'] = item.stack(url)
+   item.info['FileName'] = self.stack(url)
    #print item.info['FileName']
    #self.add(item, total)
   #self._sort()
@@ -237,6 +246,8 @@ class xbmcItems:
     return self.stack(urls[max(urls.keys())])
 
  def stack(self, urls): #Build a URL stack from multiple URLs for the XBMC player
+  if str(type(urls)) == "<type 'str'>":
+   return urls
   if len(urls) == 1:
    return urls[0]
   elif len(urls) > 1:
