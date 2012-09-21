@@ -46,7 +46,7 @@ import resources.config as config
 settings = config.__settings__
 
 
-def chtv3():
+def tv3():
  from resources.channels.tv3 import tv3 as tv3class
  tv3 = tv3class()
  if params.get("folder", "") <> "":
@@ -58,19 +58,19 @@ def chtv3():
    tv3.atoz(params["catid"][0], "tv3")
   elif params["cat"][0] == "tv3":
    tv3.episodes(params["catid"][0], "tv3")
-  elif params["cat"][0] == "c4tv":
-   tv3.episodes(params["catid"][0], "c4tv")
+  elif params["cat"][0] == "four":
+   tv3.episodes(params["catid"][0], "four")
   elif params["cat"][0] == "shows":
    tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
  elif params.get("id", "") <> "":
-  tv3.play(params["id"][0], params["provider"][0])
+  tv3.play(params["id"][0], params["provider"][0], params["info"][0])
  else:
   if config.__settings__.getSetting('TV3_folders') == 'true':
    tv3.index()
   else:
-   tv3.index()
+   tv3.index(False)
 	
-def chtvnz():
+def tvnz():
  #import resources.channels.tvnz as tvnz
  #import resources.channels.tvnz
  #tvnz = resources.channels.tvnz.tvnz
@@ -94,7 +94,7 @@ def chtvnz():
   elif params["type"][0] == "video":
    tvnz.play(params["id"][0])
    
-def chziln():
+def ziln():
  from resources.channels.ziln import ziln as zilnclass
  ziln = zilnclass()
  if params.get("folder", "") <> "":
@@ -109,7 +109,7 @@ def chziln():
  else:
   ziln.index()
 
-def chnzonscreen():
+def nzonscreen():
  from resources.channels.nzonscreen import nzonscreen as nzonscreenclass
  nzonscreen = nzonscreenclass()
  if params.get("page", "") <> "":
@@ -137,13 +137,13 @@ if params:
   xbmcitems.decode(params["item"][0])
  else:
   if params["ch"][0] == "TV3":
-   chtv3()
+   tv3()
   elif params["ch"][0] == "TVNZ":
-   chtvnz()
+   tvnz()
   elif params["ch"][0] == "Ziln":
-   chziln()
+   ziln()
   elif params["ch"][0] == "NZOnScreen":
-   chnzonscreen()
+   nzonscreen()
 # elif params["ch"][0] == "iSKY":
 # elif params["ch"][0] == "Quickflix":
 # elif params["ch"][0] == "IGLOO":
@@ -159,10 +159,9 @@ else:
   if not settings.getSetting('%s_hide' % channel) == "true":
    item = tools.xbmcItem()
    item.fanart = os.path.join('extrafanart', "%s.jpg" % channel)
-   info = item.info
-   info["Title"] = channel
-   info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
-   info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
+   item.info["Title"] = channel
+   item.info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
+   item.info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
    xbmcitems.items.append(item)
  if not settings.getSetting('Parliament_hide') == "true":
   from resources.channels.parliament import parliament as parliamentclass

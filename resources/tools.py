@@ -78,9 +78,11 @@ class xbmcItem:
   self.info = dict()
   self.info["Icon"] = "DefaultVideo.png"
   self.info["Thumb"] = ""
+  self.playable = False
   self.urls = dict()
   self.units = "kbps"
   self.channel = ""
+  self.fanart = ""
 
  def applyURL(self, bitrate):
   if bitrate in self.urls:
@@ -115,110 +117,129 @@ class xbmcItem:
    return self.stack(urls[min(urls.keys())])
   else:
    return self.stack(urls[max(urls.keys())])
-   
+
  def encode(self):
-  #return urllib.quote(str(self))
-  import pickle
-  import urllib
-  return urllib.quote(pickle.dumps(self))
+  return self._encode(self)
+
+ def infoencode(self):
+  return self._encode(self.info)
+
+ def _encode(self, toencode):
+  import pickle, urllib
+  return urllib.quote(pickle.dumps(toencode))
+  
+ def decode(self, item):
+  self.bitrates(self._decode(item))
+
+ def infodecode(self, info):
+  self.info = self._decode(info)
+
+ def _decode(self, todecode):
+  import pickle, urllib
+  return pickle.loads(urllib.unquote(todecode))
 
 
 class xbmcItems:
- def __init__(self, play = False):
+ def __init__(self, channel = ""):
   self.items = list()
   self.fanart = "fanart.jpg"
   self.channel = ""
+  if channel:
+   self.channel = channel
+   self.fanart = os.path.join('extrafanart', channel + '.jpg')
   self.sorting = ["UNSORTED", "LABEL"] # ALBUM, ALBUM_IGNORE_THE, ARTIST, ARTIST_IGNORE_THE, DATE, DRIVE_TYPE, DURATION, EPISODE, FILE, GENRE, LABEL, LABEL_IGNORE_THE, MPAA_RATING, NONE, PLAYLIST_ORDER, PRODUCTIONCODE, PROGRAM_COUNT, SIZE, SONG_RATING, STUDIO, STUDIO_IGNORE_THE, TITLE, TITLE_IGNORE_THE, TRACKNUM, UNSORTED, VIDEO_RATING, VIDEO_RUNTIME, VIDEO_TITLE, VIDEO_YEAR
   self.type = ""
-  self.play = play
+
+ def _listitem(self, item):
+  if hasattr(item, 'info'):
+   listitem = xbmcgui.ListItem(label = item.info["Title"], iconImage = item.info["Icon"], thumbnailImage = item.info["Thumb"])
+   try:
+    listitem.setProperty('fanart_image', os.path.join(settings.getAddonInfo('path'), item.fanart))
+   except:
+    listitem.setProperty('fanart_image', os.path.join(settings.getAddonInfo('path'), self.fanart))
+   listitem.setInfo(type = "video", infoLabels = item.info)
+   return listitem
+  else:
+   sys.stderr.write("No Item Info")
+
+ def _add(self, item, total = 0): #Add a list item (media file or folder) to the XBMC page
+  # http://xbmc.sourceforge.net/python-docs/xbmcgui.html#ListItem
+  listitem = self._listitem(item)
+  if listitem:
+   if item.channel:
+    channel = item.channel
+   else:
+    channel = self.channel
+   itemFolder = True
+   if item.playable:
+    if settings.getSetting('%s_quality_choose' % channel) == 'false':
+      itemFolder = False
+   if 'FileName' in item.info:
+    if not sys.argv[0] in item.info['FileName']:
+     itemFolder = False
+   else:
+    if len(item.urls) > 0:
+     if len(item.urls) == 1:
+      itemFolder = False
+      item.info['FileName'] = item.urls.itervalues().next()
+     else:
+      if settings.getSetting('%s_quality_choose' % channel) == 'false':
+       itemFolder = False
+       item.info['FileName'] = self.quality(item.urls, channel)
+      else:
+       item.info['FileName'] = '%s?item=%s' % (sys.argv[0], item.encode())
+   if not itemFolder:
+    listitem.setProperty('mimetype', 'video/x-msvideo')
+    listitem.setProperty("IsPlayable", "true")
+   return xbmcplugin.addDirectoryItem(handle = config.__id__, url = item.info["FileName"], listitem = listitem, isFolder = itemFolder, totalItems = total)
 
  def addindex(self, index, total = 0):
   self._add(self, self.items[index], total)
 
- def _add(self, item, total = 0): #Add a list item (media file or folder) to the XBMC page
-  # http://xbmc.sourceforge.net/python-docs/xbmcgui.html#ListItem
-  if hasattr(item, 'info'):
-   info = item.info
-   try:
-    channel = item.channel
-   except:
-    channel = self.channel
-   if 'FileName' in info or len(item.urls) > 0:
-    itemFolder = False
-    liz = xbmcgui.ListItem(label = info["Title"], iconImage = info["Icon"], thumbnailImage = info["Thumb"])
-    if 'FileName' in info:
-     if sys.argv[0] in info['FileName']:
-      itemFolder = True
-    elif len(item.urls) == 1:
-     itemFolder = True
-     info['FileName'] = item.urls.itervalues().next()
-    else:
-     if settings.getSetting('%s_quality_choose' % channel) == 'true':
-      itemFolder = True
-      info['FileName'] = '%s?ch=%s&item=%s' % (sys.argv[0], channel, item.encode())
-     else:
-	  info['FileName'] = self._quality(item.urls, settings.getSetting('%s_quality' % channel))
-    try:
-     fanart = item.fanart
-    except:
-     fanart = self.fanart
-    liz.setProperty('fanart_image', os.path.join(settings.getAddonInfo('path'), fanart))
-    liz.setInfo(type = "video", infoLabels = info)
-    if not itemFolder:
-     liz.setProperty("IsPlayable", "true")
-    if total == 1:
-     liz.setPath(item.path)
-     try:
-      xbmcplugin.setResolvedUrl(handle = config.__id__, succeeded = True, listitem = liz)
-     except:
-      self.message("Couldn't play item.")
-    else:
-     return xbmcplugin.addDirectoryItem(handle = config.__id__, url = info["FileName"], listitem = liz, isFolder = itemFolder, totalItems = total)
-   else:
-    sys.stderr.write("No FileName given")
+ def add(self, total):
+  self._add(self.items[-1], total)
 
  def addall(self):
   total = len(self.items)
   for item in self.items:
    self._add(item, total)
-  self._sort()
+  self.sort()
 
- def decode(self, item):
-  import pickle
-  import urllib
-  #return pickle.loads(urllib.unquote(item))
-  self.bitrates(pickle.loads(urllib.unquote(item)))
+ def resolve(self, item, channel):
+  if settings.getSetting('%s_quality_choose' % channel) == 'false':
+   self.play(self.quality(item.urls, channel))
+  else:
+   self.bitrates(item)
+
+ def play(self, url):
+  listitem = xbmcgui.ListItem()
+  listitem.setPath(url)
+  listitem.setProperty('mimetype', 'video/x-msvideo')
+  listitem.setProperty('IsPlayable', 'true')
+  try:
+   xbmcplugin.setResolvedUrl(handle = config.__id__, succeeded = True, listitem = listitem)
+  except:
+   self.message("Couldn't play item.")
 
  def bitrates(self, sourceitem):
   total = len(sourceitem.urls)
   for bitrate, url in sourceitem.urls.iteritems():
    item = xbmcItem()
-   item.fanart = sourceitem.fanart
+   try:
+    item.fanart = sourceitem.fanart
+   except:
+    pass
    item.info = sourceitem.info.copy()
    item.info['Title'] += " (" + str(bitrate) + " " + sourceitem.units + ")"
    item.info['FileName'] = self.stack(url)
-   #print item.info['FileName']
-   #self.add(item, total)
-  #self._sort()
+   #item.urls[bitrate] = (self.stack(url))
    self.items.append(item)
   self.addall()
   
   def itemtobitrates(self, item):
    itemtoitems(decode(item))
 
-# def urls(self, urls):
-#  total = len(urls)
-#  for bitrate, url in urls.iteritems():
-#   item = xbmcItem(False)
-#   item.info['Title'] = str(bitrate)
-#   item.info['FileName'] = item.stack(url)
-   #print item.info['FileName']
-   #self.add(item, total)
-  #self._sort()
-#   self.items.append(item)
-#  self.addall()
-
- def _sort(self):
+ def sort(self):
   import xbmcplugin
   for method in self.sorting:
    xbmcplugin.addSortMethod(handle = config.__id__, sortMethod = getattr(xbmcplugin, "SORT_METHOD_" + method))
@@ -236,14 +257,24 @@ class xbmcItems:
    return keyboard.getText()
   return False
 
- def _quality(self, urls, quality = 'High'): # Low, Medium, High
-  if quality in ['High', 'Medium', 'Low'] and len(urls) > 0:
-   if quality == 'Medium' and len(urls) > 2:
-    del urls[max(urls.keys())]
-   if quality == 'Low':
-    return self.stack(urls[min(urls.keys())])
-   else:
-    return self.stack(urls[max(urls.keys())])
+ def quality(self, urls, channel): # Low, Medium, High
+  quality = settings.getSetting('%s_quality' % channel)
+  if quality in ['High', 'Medium', 'Low']:
+   if len(urls) > 0:
+    if quality == 'Medium' and len(urls) > 2:
+     del urls[max(urls.keys())]
+    if quality == 'Low':
+     return self.stack(urls[min(urls.keys())])
+    else:
+     return self.stack(urls[max(urls.keys())])
+  return self.stack(urls[max(urls.keys())])
+
+ def decode(self, item):
+  self.bitrates(self._decode(item))
+
+ def _decode(self, todecode):
+  import pickle, urllib
+  return pickle.loads(urllib.unquote(todecode))
 
  def stack(self, urls): #Build a URL stack from multiple URLs for the XBMC player
   if str(type(urls)) == "<type 'str'>":

@@ -37,8 +37,8 @@ class tvnz:
   self.urls['swfUrl'] = 'http://admin.brightcove.com/viewer/us20120607.1317/federatedSlim/BrightcovePlayer.swf'
   
   self.bitrate_min = 400000
-  self.xbmcitems = tools.xbmcItems()
-  self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
+  self.xbmcitems = tools.xbmcItems(self.channel)
+  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
   #self.xbmcitems.fanart = "/".join(('extrafanart', 'TVNZ.jpg'))
 
  def url(self, folder):

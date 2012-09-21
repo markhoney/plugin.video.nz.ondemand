@@ -22,8 +22,8 @@ class ziln:
   self.urls["rtmp1"] = 'rtmp://flash1.e-cast.co.nz'
   self.urls["rtmp2"] = 'ecast'
   self.urls["rtmp3"] = 'mp4:/ziln'
-  self.xbmcitems = tools.xbmcItems()
-  self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
+  self.xbmcitems = tools.xbmcItems(self.channel)
+  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
   
  def index(self):
   item = tools.xbmcItem()

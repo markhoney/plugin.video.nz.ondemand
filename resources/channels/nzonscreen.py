@@ -15,8 +15,8 @@ class nzonscreen:
   self.urls = dict()
   self.urls['base'] = 'http://www.nzonscreen.com'
   self.urls['json'] = '/html5/video_data/'
-  self.xbmcitems = tools.xbmcItems()
-  self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
+  self.xbmcitems = tools.xbmcItems(self.channel)
+  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
 
  def url(self, folder):
   u = self.urls
@@ -112,7 +112,9 @@ class nzonscreen:
          info['Thumb'] = "%s%s" % (self.urls['base'], cell.div.div.a.img['src'])
          title = re.search("/title/(.*)", cell.a['href'])
          if title:
-          info['FileName'] = self._geturl(title.group(1), False)
+          item.urls = self._videourls(title)
+          item.units = "MB"
+          #info['FileName'] = self._geturl(title.group(1), False)
         elif cell['class'] == 'title_link title':
          info['Title'] = item.unescape(cell.a.contents[0])
         elif cell['class'] == 'year':
@@ -148,16 +150,6 @@ class nzonscreen:
   info["FileName"] = self._geturl(title, True)
   item.path = info["FileName"]
   self.xbmcitems.add(item, 1)
-
- def bitrates(self, title): #, info
-  #self.xbmcitems.addurls(self._videourls(title))
-  for bitrate, url in self._videourls(title).iteritems():
-   item = tools.xbmcItem()
-   info = item.info
-   info['Title'] = str(bitrate) + 'MB'
-   info['FileName'] = item.stack(url)
-   self.xbmcitems.items.append(item)
-  self.xbmcitems.addall()
 
  def _geturl(self, title, play):
   if settings.getSetting('%s_quality_play' % self.channel) == 'true':
