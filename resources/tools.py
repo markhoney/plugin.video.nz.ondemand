@@ -172,7 +172,7 @@ class xbmcItems:
     channel = self.channel
    itemFolder = True
    if item.playable:
-    if settings.getSetting('%s_quality_choose' % channel) == 'false':
+    if settings.getSetting('%s_quality_choose' % channel) != 'true':
       itemFolder = False
    if 'FileName' in item.info:
     if not sys.argv[0] in item.info['FileName']:
@@ -293,7 +293,7 @@ class xbmcItems:
   import xbmcgui
   dialog = xbmcgui.Dialog()
   if message:
-   if message <> "":
+   if message != "":
     dialog.ok(title, message)
    else:
     dialog.ok("Message", "Empty message text")

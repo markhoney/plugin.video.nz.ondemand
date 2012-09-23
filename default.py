@@ -49,9 +49,9 @@ settings = config.__settings__
 def tv3():
  from resources.channels.tv3 import tv3 as tv3class
  tv3 = tv3class()
- if params.get("folder", "") <> "":
+ if params.get("folder", "") != "":
   tv3.folderindex(params["folder"][0])
- elif params.get("cat", "") <> "":
+ elif params.get("cat", "") != "":
   if params["cat"][0] == "tv":
    tv3.episodes(params["catid"][0], "tv3")
   elif params["cat"][0] == "atoz":
@@ -62,7 +62,7 @@ def tv3():
    tv3.episodes(params["catid"][0], "four")
   elif params["cat"][0] == "shows":
    tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
- elif params.get("id", "") <> "":
+ elif params.get("id", "") != "":
   tv3.play(params["id"][0], params["provider"][0], params["info"][0])
  else:
   if config.__settings__.getSetting('TV3_folders') == 'true':
@@ -77,7 +77,7 @@ def tvnz():
  from resources.channels.tvnz import tvnz as tvnzclass
  tvnz = tvnzclass()
  #if params.get("type", "") == "":
- if params.get("info", "") <> "":
+ if params.get("info", "") != "":
   tvnz.play(params["id"][0], params["info"][0])
  elif not "type" in params:
   tvnz.index()
@@ -97,14 +97,14 @@ def tvnz():
 def ziln():
  from resources.channels.ziln import ziln as zilnclass
  ziln = zilnclass()
- if params.get("folder", "") <> "":
+ if params.get("folder", "") != "":
   if params["folder"][0] == "channels":
    ziln.programmes("channel", "")
   elif params["folder"][0] == "search":
    ziln.search()
- elif params.get("channel", "") <> "":
+ elif params.get("channel", "") != "":
   ziln.programmes("video", params["channel"][0])
- elif params.get("video", "") <> "":
+ elif params.get("video", "") != "":
   ziln.play(params["video"][0])
  else:
   ziln.index()
@@ -112,16 +112,16 @@ def ziln():
 def nzonscreen():
  from resources.channels.nzonscreen import nzonscreen as nzonscreenclass
  nzonscreen = nzonscreenclass()
- if params.get("page", "") <> "":
+ if params.get("page", "") != "":
   nzonscreen.page(urllib.unquote(params["filter"][0]), params["page"][0])
- elif params.get("filter", "") <> "":
+ elif params.get("filter", "") != "":
   if params["filter"][0] == "search":
    nzonscreen.search()
   else:
    nzonscreen.index(urllib.unquote(params["filter"][0]))
- elif params.get("bitrates", "") <> "":
+ elif params.get("bitrates", "") != "":
   nzonscreen.bitrates(params["bitrates"][0])
- elif params.get("title", "") <> "":
+ elif params.get("title", "") != "":
   nzonscreen.play(params["title"][0], params["info"][0])
  else:
   nzonscreen.index()
@@ -132,7 +132,7 @@ def nzonscreen():
 
 params = cgi.parse_qs(urlparse.urlparse(sys.argv[2])[4])
 if params:
- if params.get("item", "") <> "":
+ if params.get("item", "") != "":
   xbmcitems = tools.xbmcItems()
   xbmcitems.decode(params["item"][0])
  else:

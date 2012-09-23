@@ -170,7 +170,7 @@ class tv3:
 
  def show(self, catid, title, provider): #Show video items from a TV Show style TV3 webpage
   baseurl = ""
-  if catid[:4] <> "http":
+  if catid[:4] != "http":
    baseurl = self.urls["base"]
   geturl = "%s%s" % (baseurl, catid)
   page = webpage(geturl)
@@ -301,7 +301,7 @@ class tv3:
       item.titleplot()
       plot = soup.find("div", attrs={"class": "left"}).string
       if plot:
-       if plot.strip() <> "":
+       if plot.strip() != "":
         info["Plot"] = item.unescape(plot.strip())
       if self.prefetch:
        item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
@@ -333,7 +333,7 @@ class tv3:
    if link:
     if link.string:
      plot = link.string.strip()
-     if plot <> "":
+     if plot != "":
       info["PlotOutline"] = plot
       info["TVShowTitle"] = title
       image = soup.find("img", attrs={"src": re.compile(self.urls["img_re"])})
@@ -372,7 +372,7 @@ class tv3:
   if link:
    if link.string:
     plot = link.string.strip()
-    if plot <> "":
+    if plot != "":
      info["PlotOutline"] = plot
      info["TVShowTitle"] = title
      info.update(self._seasonepisode(link))
@@ -403,7 +403,7 @@ class tv3:
     if href:
      if link.string:
       title = link.string.strip()
-      if title <> "":
+      if title != "":
        item.info["TVShowTitle"] = title
        image = soup.find("img", attrs={"src": re.compile(self.urls["IMG_RE2"]), "title": True})
        if image:
