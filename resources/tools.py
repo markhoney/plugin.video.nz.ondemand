@@ -94,12 +94,12 @@ class xbmcItem:
   elif len(urls) > 1:
    return "stack://" + " , ".join([url.replace(',', ',,').strip() for url in urls])
   return False
-  
+
  def sxe(self):
   if 'Season' in self.info and 'Episode' in self.info:
    return str(self.info["Season"]) + "x" + str(self.info["Episode"]).zfill(2)
   return False
-  
+
  def unescape(self, s): #Convert escaped HTML characters back to native unicode, e.g. &gt; to > and &quot; to "
   from htmlentitydefs import name2codepoint
   return re.sub('&(%s);' % '|'.join(name2codepoint), lambda m: unichr(name2codepoint[m.group(1)]), s)
@@ -127,7 +127,7 @@ class xbmcItem:
  def _encode(self, toencode):
   import pickle, urllib
   return urllib.quote(pickle.dumps(toencode))
-  
+
  def decode(self, item):
   self.bitrates(self._decode(item))
 
@@ -206,10 +206,13 @@ class xbmcItems:
   self.sort()
 
  def resolve(self, item, channel):
-  if settings.getSetting('%s_quality_choose' % channel) == 'false':
-   self.play(self.quality(item.urls, channel))
-  else:
+  if settings.getSetting('%s_quality_choose' % channel) == 'true':
    self.bitrates(item)
+  else:
+   if 'FileName' in item.info:
+    self.play(item.info['FileName'])
+   else:
+    self.play(self.quality(item.urls, channel))
 
  def play(self, url):
   listitem = xbmcgui.ListItem()
@@ -219,7 +222,8 @@ class xbmcItems:
   try:
    xbmcplugin.setResolvedUrl(handle = config.__id__, succeeded = True, listitem = listitem)
   except:
-   self.message("Couldn't play item.")
+   pass
+   #self.message("Couldn't play item.")
 
  def bitrates(self, sourceitem):
   total = len(sourceitem.urls)
@@ -235,7 +239,7 @@ class xbmcItems:
    #item.urls[bitrate] = (self.stack(url))
    self.items.append(item)
   self.addall()
-  
+
   def itemtobitrates(self, item):
    itemtoitems(decode(item))
 
@@ -298,7 +302,7 @@ class xbmcItems:
 
  def log(self, message):
   sys.stderr.write(message)
-  
+
 
 
 

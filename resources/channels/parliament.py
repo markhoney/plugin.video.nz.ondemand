@@ -1,6 +1,6 @@
 # http://inthehouse.co.nz/
 
-import os, sys, xbmcaddon, resources.tools, resources.config
+import os, sys
 from datetime import date
 
 import resources.tools as tools

@@ -69,7 +69,7 @@ def tv3():
    tv3.index()
   else:
    tv3.index(False)
-	
+
 def tvnz():
  #import resources.channels.tvnz as tvnz
  #import resources.channels.tvnz
@@ -77,7 +77,9 @@ def tvnz():
  from resources.channels.tvnz import tvnz as tvnzclass
  tvnz = tvnzclass()
  #if params.get("type", "") == "":
- if not "type" in params:
+ if params.get("info", "") <> "":
+  tvnz.play(params["id"][0], params["info"][0])
+ elif not "type" in params:
   tvnz.index()
  else:
   if params["type"][0] == "shows":
@@ -91,9 +93,7 @@ def tvnz():
    tools.addsorting(["label"], "tvshows")
   elif params["type"][0] == "search":
    tvnz.search()
-  elif params["type"][0] == "video":
-   tvnz.play(params["id"][0])
-   
+
 def ziln():
  from resources.channels.ziln import ziln as zilnclass
  ziln = zilnclass()
@@ -122,7 +122,7 @@ def nzonscreen():
  elif params.get("bitrates", "") <> "":
   nzonscreen.bitrates(params["bitrates"][0])
  elif params.get("title", "") <> "":
-  nzonscreen.play(params["title"][0])
+  nzonscreen.play(params["title"][0], params["info"][0])
  else:
   nzonscreen.index()
 

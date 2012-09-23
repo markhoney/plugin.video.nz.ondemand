@@ -1,17 +1,10 @@
-import urllib, string, re, sys, time, os
+import urllib, re, sys
 from BeautifulSoup import BeautifulSoup, SoupStrainer, BeautifulStoneSoup
-from xml.dom import minidom
-
-import xbmcgui, xbmcplugin, xbmcaddon
 
 import resources.tools as tools
 import resources.config as config
 settings = config.__settings__
 from resources.tools import webpage
-
-
-ziln_urls = dict()
-
 
 class ziln:
  def __init__(self):
@@ -23,8 +16,11 @@ class ziln:
   self.urls["rtmp2"] = 'ecast'
   self.urls["rtmp3"] = 'mp4:/ziln'
   self.xbmcitems = tools.xbmcItems(self.channel)
-  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
-  
+  self.prefetch = False
+  if settings.getSetting('%s_prefetch' % self.channel) == 'true':
+   self.prefetch = True
+
+
  def index(self):
   item = tools.xbmcItem()
   info = item.info
@@ -47,7 +43,6 @@ class ziln:
    url = self.urls['base']
   elif type == "video":
    folder = 0
-   #url = "%s/channel/%s" % (ziln_urls["ZILN"], urlext)
    url = "%s/assets/php/slider.php?channel=%s" % (self.urls['base'], urlext)
   elif type == "search":
    folder = 0
@@ -69,31 +64,33 @@ class ziln:
      list = programme.find('ul')
      if list:
       listitems = list.findAll('li')
-      if len(listitems) > 0:
-       count = 0
+      count = len(listitems)
+      if count > 0:
        for listitem in listitems:
         link = listitem.find('a', attrs={'href' : re.compile("^/%s/" % type)})
         if link.img:
          if re.search("assets/images/%ss/" % type, link.img["src"]):
           #item = tools.xbmcItem()
           item = tools.xbmcItem()
-          info = item.info
           if listitem.p.string:
-           info["Title"] = listitem.p.string.strip()
+           item.info["Title"] = listitem.p.string.strip()
           else:
-           info["Title"] = link.img["alt"]
-          info["Thumb"] = "%s/%s" % (self.urls['base'], link.img["src"])
-          #channelurl = re.search("/%s/(.*)" % type, link["href"]).group(1)
-          channelurl = re.search("assets/images/%ss/([0-9]*?)-mini.jpg" % type, link.img["src"]).group(1)
-          #infourl = "&info=%s" % urllib.quote(str(info))
+           item.info["Title"] = link.img["alt"]
+          item.info["Thumb"] = "%s/%s" % (self.urls['base'], link.img["src"])
+          index = re.search("assets/images/%ss/([0-9]*?)-mini.jpg" % type, link.img["src"]).group(1)
+          item.info["FileName"] = "%s?ch=%s&%s=%s" % (self.base, self.channel, type, urllib.quote(index))
           if type == "video":
-           item.folder = False
-           info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
-           #info["FileName"] = self._geturl(channelurl)
-          else:
-           info["FileName"] = "%s?ch=Ziln&%s=%s" % (self.base, type, urllib.quote(channelurl))
+           if self.prefetch:
+            item.info["FileName"] = self._geturl(index)
+           else:
+            item.playable = True
           self.xbmcitems.items.append(item)
-       self.xbmcitems.addall()
+          if self.prefetch:
+           self.xbmcitems.add(count)
+       if self.prefetch:
+        self.xbmcitems.sort()
+       else:
+        self.xbmcitems.addall()
      else:
       sys.stderr.write("Search returned no results")
    else:
@@ -106,18 +103,8 @@ class ziln:
   if results:
    self.programmes("search", results)
 
- def play(self, index): #, info
-  item = tools.xbmcItem(False)
-  info = item.info
-  info["Title"] = ""
-  uri = self._geturl(index)
-  info["FileName"] = uri
-  item.path = uri
-  self.xbmcitems.add(item, 1)
-   
-   # <jwplayer:hd.file>/assets/videos/airsidetv/files/720p/airnz_777_200s_lax_HD.mp4</jwplayer:hd.file>
-   # <media:content bitrate="1800"  url="/assets/videos/airsidetv/files/520p/airnz_777_200s_lax_1000kb.mp4" type="video/x-mp4"/>
-
+ def play(self, index):
+  self.xbmcitems.play(self._geturl(index))
 
  def _geturl(self, index):
   page = webpage("%s/playlist/null/%s" % (self.urls['base'], index))

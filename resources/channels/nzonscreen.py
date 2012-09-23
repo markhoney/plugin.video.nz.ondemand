@@ -1,7 +1,5 @@
-import urllib, string, re, sys, time, os
+import urllib, re, sys
 from BeautifulSoup import BeautifulSoup, SoupStrainer, BeautifulStoneSoup
-
-import xbmcgui, xbmcplugin, xbmcaddon
 
 import resources.tools as tools
 import resources.config as config
@@ -16,7 +14,9 @@ class nzonscreen:
   self.urls['base'] = 'http://www.nzonscreen.com'
   self.urls['json'] = '/html5/video_data/'
   self.xbmcitems = tools.xbmcItems(self.channel)
-  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
+  self.prefetch = False
+  if settings.getSetting('%s_prefetch' % self.channel) == 'true':
+   self.prefetch = True
 
  def url(self, folder):
   u = self.urls
@@ -61,7 +61,7 @@ class nzonscreen:
       else:
        filterarray = link["href"].split('/')
        info["Title"] = filterarray[len(filterarray) - 1].capitalize()
- #     info["Thumb"] = 
+ #     info["Thumb"] =
       self.xbmcitems.items.append(item)
      if filterlevel == 1:
       item = tools.xbmcItem()
@@ -70,7 +70,7 @@ class nzonscreen:
       info["Title"] = "Search"
       self.xbmcitems.items.append(item)
     else:
- #    if filterarray[filterlevel] == 
+ #    if filterarray[filterlevel] ==
      nav = html_divtag.find(attrs={'class' : 'nav_pagination'})
      if nav:
       pages = nav.findAll('a')
@@ -87,9 +87,9 @@ class nzonscreen:
         self.xbmcitems.items.append(item)
     self.xbmcitems.addall()
    else:
-    sys.stderr.write("Couldn't find menu")
+    sys.stderr.write("index: No links")
   else:
-   sys.stderr.write("Couldn't get page")
+   sys.stderr.write("index: No page.doc")
 
  def page(self, filter, page):
   url = "%s%s?page=%s" % (self.urls['base'], filter, page)
@@ -103,37 +103,46 @@ class nzonscreen:
     if len(rows) > 0:
      for row in rows:
       cells = row.findAll('td')
-      if len(cells) > 0:
+      count = len(cells)
+      if count > 0:
        item = tools.xbmcItem()
-       info = item.info
-       item.units = "MB"
        for cell in cells:
         if cell['class'] == 'image':
-         info['Thumb'] = "%s%s" % (self.urls['base'], cell.div.div.a.img['src'])
+         item.info['Thumb'] = "%s%s" % (self.urls['base'], cell.div.div.a.img['src'])
          title = re.search("/title/(.*)", cell.a['href'])
-         if title:
-          item.urls = self._videourls(title)
-          item.units = "MB"
-          #info['FileName'] = self._geturl(title.group(1), False)
-        elif cell['class'] == 'title_link title':
-         info['Title'] = item.unescape(cell.a.contents[0])
-        elif cell['class'] == 'year':
-         pass
-        elif cell['class'] == 'category':
-         pass
-        elif cell['class'] == 'director':
-         pass
+         if not title:
+          title = re.search("/interviews/(.*)", cell.a['href'])
+        #elif cell['class'] == 'title_link title':
+        elif cell['class'].startswith('title_link'):
+         item.info['Title'] = item.unescape(cell.a.contents[0])
+        #elif cell['class'] == 'year':
+        # pass
+        #elif cell['class'] == 'category':
+        # pass
+        #elif cell['class'] == 'director':
+        # pass
         elif cell['class'] == 'added':
-         info["Date"] = tools.xbmcdate(cell.contents[0], ".")
-       if 'FileName' in info:
+         item.info["Date"] = tools.xbmcdate(cell.contents[0], ".")
+       if title:
+        if self.prefetch:
+         item.urls = self._videourls(title.group(1))
+         item.units = "MB"
+        else:
+         item.info["FileName"] = "%s?ch=%s&title=%s&info=%s" % (self.base, self.channel, title.group(1), item.infoencode())
+         item.playable = True
         self.xbmcitems.items.append(item)
-     self.xbmcitems.addall()
+        if self.prefetch:
+         self.xbmcitems.add(count)
+     if self.prefetch:
+      self.xbmcitems.sort()
+     else:
+      self.xbmcitems.addall()
     else:
-     sys.stderr.write("No rows found")
+     sys.stderr.write("page: No rows")
    else:
-    sys.stderr.write("Couldn't find items")
+    sys.stderr.write("page: No results")
   else:
-   sys.stderr.write("Couldn't get page")
+   sys.stderr.write("page: No page.doc")
 
  def search(self):
   import xbmc
@@ -143,23 +152,15 @@ class nzonscreen:
   if keyboard.isConfirmed():
    self.page("search", keyboard.getText())
 
- def play(self, title): #, info
-  item = tools.xbmcItem(False)
-  info = item.info
-  info["Title"] = ""
-  info["FileName"] = self._geturl(title, True)
-  item.path = info["FileName"]
-  self.xbmcitems.add(item, 1)
+ def play(self, title, encodedinfo):
+  item = tools.xbmcItem()
+  item.infodecode(encodedinfo)
+  item.units = "MB"
+  item.fanart = self.xbmcitems.fanart
+  item.urls = self._geturls(title)
+  self.xbmcitems.resolve(item, self.channel)
 
- def _geturl(self, title, play):
-  if settings.getSetting('%s_quality_play' % self.channel) == 'true':
-   return "%s?ch=%s&bitrates=%s" % (self.base, self.channel, title) #self.xbmcitems.addurls(self._videourls(title))
-  elif play:
-   return self.xbmcitems.url(self._videourls(title), settings.getSetting('%s_quality' % self.channel))
-  else:
-   return "%s?ch=%s&title=%s" % (self.base, self.channel, title)
-
- def _videourls(self, title):
+ def _geturls(self, title):
   url = "%s%s%s" % (self.urls['base'], self.urls['json'], title)
   page = webpage(url)
   if page.doc:
@@ -167,24 +168,16 @@ class nzonscreen:
    videos = json.loads(page.doc)
    allurls = dict()
    returnurls = dict()
-   #bitrates = list()
    filesizes = dict()
    for name, value in videos[0].iteritems():
     if name[-4:] == '_res':
-     #bitrates.append(name[:-4])
      bitrate = name[:-4]
      allurls[bitrate] = list()
      filesizes[bitrate] = 0
    for video in videos:
     for bitrate, temp in allurls.iteritems():
-     #print bitrate
      allurls[bitrate].append(video[bitrate + '_res'])
      filesizes[bitrate] = filesizes[bitrate] + video[bitrate + '_res_mb']
    for bitrate, urls in allurls.iteritems():
-    #returnurls[str(filesizes[bitrate])] = urls
     returnurls[filesizes[bitrate]] = urls
    return returnurls
-#   for bitrate, urls in allurls.iteritems():
-#    item.urls[bitrate] = item.stack(urls)
-#   uri = item.stack(allurls['hi_res'])
-#   return uri

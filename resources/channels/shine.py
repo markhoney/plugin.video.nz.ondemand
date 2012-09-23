@@ -1,4 +1,4 @@
-import os, sys, xbmcaddon, resources.tools
+import os, resources.tools
 from datetime import date
 
 import resources.tools as tools

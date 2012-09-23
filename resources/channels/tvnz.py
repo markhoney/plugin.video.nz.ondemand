@@ -1,10 +1,6 @@
-import urlparse, urllib, urllib2, htmllib, cgi
-import string, unicodedata, os, re, sys, time
-from datetime import date
-import datetime
-from xml.dom import minidom
+import re, sys
 
-import xbmc, xbmcgui, xbmcplugin, xbmcaddon
+from xml.dom import minidom
 
 import resources.tools as tools
 import resources.config as config
@@ -33,13 +29,16 @@ class tvnz:
   self.urls['const'] = 'c533b8ff14118661efbd88d7be2520a0427d3b62'
   self.urls['playerID'] = 1257248093001
   self.urls['PS3'] = 'http://tvnz.co.nz/ondemand/xl'
+  self.urls['contentID'] = 'http://tvnz.co.nz/ondemand/xl'
+  #self.urls['contentID'] = 'http://tvnz.co.nz/ondemand/xl&dynamicStreaming=true&isSlim=true&isSlim=1?smoothing=true&playerHeight=512&playerWidth=640&videoSmoothing=true'
   #self.urls['PS3'] = 'http://tvnz.co.nz/stylesheets/ps3/entertainment/flash/ps3Flash.swf'
-  self.urls['swfUrl'] = 'http://admin.brightcove.com/viewer/us20120607.1317/federatedSlim/BrightcovePlayer.swf'
-  
+  self.urls['swfUrl'] = 'http://admin.brightcove.com/viewer/us20120920.1336/federatedSlim/BrightcovePlayer.swf'
+
   self.bitrate_min = 400000
   self.xbmcitems = tools.xbmcItems(self.channel)
-  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
-  #self.xbmcitems.fanart = "/".join(('extrafanart', 'TVNZ.jpg'))
+  self.prefetch = False
+  if settings.getSetting('%s_prefetch' % self.channel) == 'true':
+   self.prefetch = True
 
  def url(self, folder):
   u = self.urls
@@ -60,7 +59,7 @@ class tvnz:
  # from brightcove import api
  # brightcove = api.Brightcove(self.urls['playerKey'])
  # print brightcove.find_all_videos().items[0]
-  
+
 
  def index(self):
   page = webpage(self.url("ps3_navigation")) # http://tvnz.co.nz/content/ps3_navigation/ps3_xml_skin.xml
@@ -98,7 +97,7 @@ class tvnz:
     se = re.search('/content/(.*)_(episodes|extras)_group/ps3_xml_skin.xml', show.attributes["href"].value)
     if se:
      if se.group(2) == "episodes":
-      #videos = int(show.attributes["videos"].value) # Number of Extras 
+      #videos = int(show.attributes["videos"].value) # Number of Extras
 	  #episodes = int(show.attributes["episodes"].value) # Number of Episodes
       #channel = show.attributes["channel"].value
       item = tools.xbmcItem()
@@ -151,11 +150,10 @@ class tvnz:
   #se = re.search('/([0-9]+)/', ep.attributes["href"].value)
   se = re.search('([0-9]+)', ep.attributes["href"].value)
   if se:
-   item = tools.xbmcItem(folder = False)
-   info = item.info
+   item = tools.xbmcItem()
    link = se.group(1)
    if ep.firstChild:
-    info["Plot"] = ep.firstChild.data.strip()
+    item.info["Plot"] = ep.firstChild.data.strip()
    title = ep.attributes["title"].value
    subtitle = ep.attributes["sub-title"].value
    if not subtitle:
@@ -164,65 +162,44 @@ class tvnz:
      title = titleparts[0]
      subtitle = titleparts[1]
    sxe = ""
-   episodeparts = string.split(ep.attributes["episode"].value, '|')
+   episodeparts = ep.attributes["episode"].value.split('|')
    if len(episodeparts) == 3:
     #see = re.search('Series ([0-9]+), Episode ([0-9]+)', episodeparts[0].strip()) # Need to catch "Episodes 7-8" as well as "Epsiode 7". Also need to catch episode without series
     see = re.search('(?P<s>Se(ries|ason) ([0-9]+), )?Episodes? (?P<e>[0-9]+)(-(?P<e2>[0-9]+))?', episodeparts[0].strip())
     if see:
      try:
-      info["Season"]  = int(see.group("s"))
+      item.info["Season"]  = int(see.group("s"))
      except:
-      info["Season"] = 1
-     info["Episode"] = int(see.group("e"))
+      item.info["Season"] = 1
+     item.info["Episode"] = int(see.group("e"))
     sxe = item.sxe()
     if not sxe:
       sxe = episodeparts[0].strip() # E.g. "Coming Up" or "Catch Up"
     date = self._date(episodeparts[1].strip())
     if date:
-     info["Date"] = date
-    info["Premiered"] = episodeparts[1].strip()
-    info["Duration"] = self._duration(episodeparts[2].strip())
-   info["TVShowTitle"] = title
-   info["Title"] = " ".join((title, sxe, subtitle)) #subtitle
-   info["Thumb"] = ep.attributes["src"].value
-   #info["FileName"] = "%s?ch=%s&type=video&id=%s&info=%s" % (self.base, self.channel, link, urllib.quote(str(info)))
-   #info["FileName"] = "%s?ch=%s&type=video&id=%s" % (self.base, self.channel, link)
-   #info["FileName"] = self._geturl(link)
-   info["FileName"] = self._geturl(link, False)
+     item.info["Date"] = date
+    item.info["Premiered"] = episodeparts[1].strip()
+    item.info["Duration"] = self._duration(episodeparts[2].strip())
+   item.info["TVShowTitle"] = title
+   item.info["Title"] = " ".join((title, sxe, subtitle)) #subtitle
+   item.info["Thumb"] = ep.attributes["src"].value
+   if self.prefetch:
+    item.urls = self._geturls(link)
+   else:
+    item.playable = True
+    item.info["FileName"] = "%s?ch=%s&id=%s&info=%s" % (self.base, self.channel, link, item.infoencode())
    return item
-  return False
-
- def play(self, id): #, info
-  item = tools.xbmcItem(False)
-  info = item.info
-  info["Title"] = ""
-  url = self._geturl(id, True)
-  if url:
-   info["FileName"] = url
-   item.path = info["FileName"]
-   self.xbmcitems.add(item, 1)
-
- def bitrates(self, id): #, info
-  #self.xbmcitems.addurls(self._videourls(id))
-  urls = self._videourls(id)
-  if urls:
-   for bitrate, url in urls.iteritems():
-    item = tools.xbmcItem(False)
-    info = item.info
-    info['Title'] = str(bitrate) + 'MB'
-    info['FileName'] = item.stack(url)
-    self.xbmcitems.items.append(item)
-   self.xbmcitems.addall()
-
- def _geturl(self, id, play):
-  if settings.getSetting('%s_quality_play' % self.channel) == 'true':
-   return "%s?ch=%s&bitrates=%s" % (self.base, self.channel, id) #self.xbmcitems.addurls(self._videourls(id))
-  elif play:
-   return self.xbmcitems.url(self._videourls(id), settings.getSetting('%s_quality' % self.channel))
   else:
-   return "%s?ch=%s&type=video&id=%s" % (self.base, self.channel, id)
+   sys.stderr.write("_episode: No se")
 
- def _videourls(self, id):
+ def play(self, id, encodedinfo):
+  item = tools.xbmcItem()
+  item.infodecode(encodedinfo)
+  item.fanart = self.xbmcitems.fanart
+  item.urls = self._geturls(id)
+  self.xbmcitems.resolve(item, self.channel)
+
+ def _geturlsold(self, id):
   page = webpage("/".join((self.urls['base'], self.urls['content'], id, self.urls['play'])))
   if page.doc:
    xml = self._xml(page.doc)
@@ -254,34 +231,54 @@ class tvnz:
     rtmpdata = self.get_clip_info(int(id), experienceID, contentURL)
     print rtmpdata['programmedContent']['videoPlayer']['mediaDTO']['renditions'][0]['defaultURL']
     #self.xbmcitems.message("Sorry, TVNZ RTMP URLs are not supported yet")
+   else:
+    sys.stderr.write("_geturls: No xml")
+  else:
+   sys.stderr.write("_geturls: No page.doc")
 
+ def _geturls(self, id):
+  rtmpdata = self.get_clip_info(int(id), 12345, self.urls['contentID'])
+  #print rtmpdata['programmedContent']['videoPlayer']['mediaDTO']['renditions'][0]['defaultURL']
+  #print rtmpdata['configuredProperties']['videoPlayer']['mediaDTO']['renditions'][0]['defaultURL']
 
  def get_clip_info(self, contentID, experienceID, url):
-  #import pyamf
-  from pyamf import register_class
+  import pyamf
+  #from pyamf import register_class
   from pyamf import remoting
   import httplib
   conn = httplib.HTTPConnection("c.brightcove.com")
-  register_class(ContentOverride, 'com.brightcove.experience.ContentOverride')
+  pyamf.register_class(ViewerExperienceRequest, 'com.brightcove.experience.ViewerExperienceRequest')
+  pyamf.register_class(ContentOverride, 'com.brightcove.experience.ContentOverride')
   content_override = ContentOverride(contentID)
-  register_class(ViewerExperienceRequest, 'com.brightcove.experience.ViewerExperienceRequest')
   #viewer_exp_req = ViewerExperienceRequest(self.urls['PS3'], [content_override], contentID, self.urls['playerKey'])
   viewer_exp_req = ViewerExperienceRequest(url, [content_override], contentID, self.urls['playerKey'])
   env = remoting.Envelope(amfVersion = 3)
   #env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.player.runtime.PlayerMediaFacade.findMediaById", body = [self.urls['const'], self.urls['playerID'], contentID, self.urls['publisherID']], envelope = env)))
   #env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.experience.ExperienceRuntimeFacade.getProgrammingWithOverrides", body = [self.urls['const'], self.urls['playerID'], [content_override]], envelope = env)))
   env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.experience.ExperienceRuntimeFacade.getDataForExperience", body = [self.urls['const'], viewer_exp_req], envelope = env)))
+  #env.bodies.append(("/1",  remoting.Request(target = "com.brightcove.experience.ExperienceRuntimeFacade.getDataForExperience", body = [self.urls['const'], self.urls['playerID'], contentID, self.urls['publisherID']], envelope = env)))
   #print remoting.encode(env)
   conn.request("POST", "/services/messagebroker/amf?playerKey=" + self.urls['playerKey'], str(remoting.encode(env).read()), {'content-type': 'application/x-amf'})
   #conn.request("POST", "/services/messagebroker/amf?playerID=" + str(self.urls['playerID']), str(remoting.encode(env).read()), {'content-type': 'application/x-amf'})
   resp = conn.getresponse().read()
+  response = remoting.decode(resp).bodies[0][1].body
   import pprint
   pp = pprint.PrettyPrinter()
+  print "pprint viewer_exp_req:"
+  pp.pprint(viewer_exp_req)
+  print "pprint env:"
+  pp.pprint(env)
+  print "pprint env.bodies:"
+  pp.pprint(env.bodies)
+  print "pprint resp:"
   pp.pprint(resp)
-  response = remoting.decode(resp).bodies[0][1].body
-  print response
-  return response
-  #return remoting.decode(conn.getresponse().read()).bodies[0][1].body
+  print "pprint remoting.decode(resp):"
+  pp.pprint(remoting.decode(resp))
+  #print "print response"
+  #print response
+  #return response
+  #return remoting.decode(conn.getresponse().read()).bodies[0][1].body['configuredProperties']['videoPlayer']['mediaDTO']['renditions']
+  return response['programmedContent']['videoPlayer']['mediaDTO']['renditions']
 
  def advert(self, chapter):
   advert = chapter.getElementsByTagName('ref')
@@ -308,6 +305,7 @@ class tvnz:
   return str(minutes)
 
  def _date(self, str):
+  import datetime
   # Dates are formatted like 23 Jan 2010.
   # Can't use datetime.strptime as that wasn't introduced until Python 2.6
   formats = ["%d %b %y", "%d %B %y", "%d %b %Y", "%d %B %Y"]
@@ -319,16 +317,14 @@ class tvnz:
   return False
 
 class ContentOverride(object):
- #def __init__(self, contentId, contentType = 1, target = 'videoList'):
- def __init__(self, contentId = 0, contentType = 1, target = 'videoPlayer'):
+ #def __init__(self, contentId = 0, contentType = 0, target = 'videoList'):
+ def __init__(self, contentId = 0, contentType = 0, target = 'videoPlayer'):
   self.contentType = contentType
   self.contentId = contentId
   self.target = target
   self.contentIds = None
   self.contentRefId = None
   self.contentRefIds = None
-  #self.contentType = 1
-  self.contentType = 0
   self.featureId = float(0)
   self.featuredRefId = None
 

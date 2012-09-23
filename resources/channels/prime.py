@@ -1,5 +1,4 @@
-import os, sys
-import xbmc
+import sys
 import resources.tools as tools
 
 class prime:
@@ -15,7 +14,6 @@ class prime:
   self.programs['Sport'] = "Business & Sport News"
   self.programs['Weather'] = "The Weather News"
   self.xbmcitems = tools.xbmcItems(self.channel)
-  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
   for channel, description in self.programs.iteritems():
    item = tools.xbmcItem()
    item.channel = self.channel

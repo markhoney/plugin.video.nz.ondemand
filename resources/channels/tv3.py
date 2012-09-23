@@ -1,16 +1,14 @@
 # 3 News
 # mms://content.mediaworks.co.nz/tv/News/TOPSTORIES.300k
 
-import urllib, string, re, sys, time, os
-from BeautifulSoup import BeautifulSoup, SoupStrainer
+import urllib, re, sys, time
 
-import xbmc, xbmcgui, xbmcplugin, xbmcaddon
+from BeautifulSoup import BeautifulSoup, SoupStrainer
 
 import resources.tools as tools
 import resources.config as config
 settings = config.__settings__
 from resources.tools import webpage
-
 
 class tv3:
  def __init__(self):
@@ -39,8 +37,6 @@ class tv3:
   self.prefetch = False
   if settings.getSetting('%s_prefetch' % self.channel) == 'true':
    self.prefetch = True
-  #self.xbmcitems.channel = self.channel
-  #self.xbmcitems.fanart = os.path.join('extrafanart', self.channel + '.jpg')
 
  def index(self, fake = True):
   if fake:
@@ -241,38 +237,44 @@ class tv3:
    programs = html_atag.findAll(attrs={"class": "results"})
    if len(programs) > 0:
     for soup in programs:
-     self.xbmcitems.items.append(self._searchitem(soup, "tv3"))
+     self.xbmcitems.items.append(self._itemsearch(soup, "tv3"))
+     self.xbmcitems.items.append(self._itemsearch(soup, "four"))
     self.xbmcitems.addall()
    else:
     sys.stderr.write("_search: Couldn't find any videos")
   else:
    sys.stderr.write("_search: Couldn't get videos webpage")
 
- def _searchitem(self, soup, provider): # Scrape items from a table-style HTML page
+ def _itemsearch(self, soup, provider): # Scrape items from a table-style HTML page
   baseurl = self._base_url(provider)
-  item = tools.xbmcItem(False)
+  item = tools.xbmcItem()
   info = item.info
   title = soup.find("div", attrs={"class": 'catTitle'})
   if title:
    info["TVShowTitle"] = title.a.string.strip()
    href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["video1"], self.urls["video2"], self.urls["video3"]), title.a['href'])
-   image = soup.find("img")
-   if image:
-    info["Thumb"] = image['src']
-   ep = soup.find("div", attrs={"class": 'epTitle'})
-   if ep:
-    if ep.a:
-     info.update(self._seasonepisode(ep.a))
-   date = soup.find("div", attrs={"class": 'epDate'})
- #  if date:
- #   sys.stderr.write(date.span[1].string.strip())
-   item.titleplot()
-   if self.prefetch:
-    item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
+   if href:
+    image = soup.find("img")
+    if image:
+     info["Thumb"] = image['src']
+    ep = soup.find("div", attrs={"class": 'epTitle'})
+    if ep:
+     if ep.a:
+      info.update(self._seasonepisode(ep.a))
+    date = soup.find("div", attrs={"class": 'epDate'})
+  #  if date:
+  #   sys.stderr.write(date.span[1].string.strip())
+    item.titleplot()
+    if self.prefetch:
+     item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
+    else:
+     item.playable = True
+     info["FileName"] = "%s?ch=TV3&id=%s&provider=%s&info=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
+    return item
    else:
-    item.playable = True
-    info["FileName"] = "%s?ch=TV3&id=%s&provider=%s&info=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
-   return item
+    sys.stderr.write("_itemsearch: No href")
+  else:
+   sys.stderr.write("_itemsearch: No title")
 
  def _itemdiv(self, soup, provider): #Scrape items from a div-style HTML page
   baseurl = self._base_url(provider)
@@ -312,7 +314,7 @@ class tv3:
     else:
      sys.stderr.write("_itemdiv: No link.string")
    else:
-    sys.stderr.write("_itemdiv: No HREF")
+    sys.stderr.write("_itemdiv: No href")
   else:
    sys.stderr.write("_itemdiv: No link")
 
@@ -417,7 +419,7 @@ class tv3:
         item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
        else:
         item.playable = True
-        item.info["FileName"] = "%s?ch=TV3&id=%s&provider=%s&info=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
+        item.info["FileName"] = "%s?ch=%s&id=%s&provider=%s&info=%s" % (self.base, self.channel, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
        if "FileName" in item.info or len(item.urls) > 0:
         return item
       else:
@@ -437,8 +439,6 @@ class tv3:
   item.fanart = self.xbmcitems.fanart
   item.urls = self._geturls(id, studio)
   self.xbmcitems.resolve(item, self.channel)
-  #self.xbmcitems.items.append(item)
-  #self.xbmcitems.addall()
 
  def _geturls(self, id, studio): #Scrape a page for a given OnDemand video and build an RTMP URL from the info in the page, then play the URL
   urls = dict()
