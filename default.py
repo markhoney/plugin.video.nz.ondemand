@@ -153,14 +153,21 @@ if params:
   else:
    sys.stderr.write("Invalid Channel ID")
 else:
- channels = ["TV3", "TVNZ", "Prime", "NZOnScreen", "Ziln"]
+ #channels = ["TV3", "TVNZ", "Prime", "NZOnScreen", "Ziln"]
+ channels = dict()
+ channels["TV3"] = "Latest TV On Demand video from both TV3 and FOUR."
+ #channels["TVNZ"] = "Ready when you are."
+ channels["Prime"] = "Prime News: First At 5:30 brings you the top news and sports stories from New Zealand and around the world."
+ channels["NZOnScreen"] = "The online showcase of New Zealand television, film and music video."
+ channels["Ziln"] = "Ziln links the audience reach of broadband internet with a potentially limitless amount of targetted live streaming and View On Demand TV/video content."
  xbmcitems = tools.xbmcItems()
- for channel in channels:
+ for channel, description in channels.iteritems():
   if not settings.getSetting('%s_hide' % channel) == "true":
    item = tools.xbmcItem()
    item.fanart = os.path.join('extrafanart', "%s.jpg" % channel)
    item.info["Title"] = channel
    item.info["Thumb"] = os.path.join(settings.getAddonInfo('path'), "resources/images/%s.png" % channel)
+   item.info["Plot"] = description
    item.info["FileName"] = "%s?ch=%s" % (sys.argv[0], channel)
    xbmcitems.items.append(item)
  if not settings.getSetting('Parliament_hide') == "true":

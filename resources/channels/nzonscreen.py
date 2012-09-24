@@ -36,6 +36,9 @@ class nzonscreen:
  def index(self, filter = "/explore/"):
   filterarray = filter.strip('/').split('/')
   filterlevel = len(filterarray)
+  print filter
+  print filter.strip('/')
+  print str(filterlevel)
   url = self.urls['base'] + filter
   #sys.stderr.write("URL: " + url)
   #sys.stderr.write('explore_filter_%s' % str(filterlevel))
@@ -46,6 +49,8 @@ class nzonscreen:
    div_tag = SoupStrainer('div')
    html_divtag = BeautifulSoup(page.doc, parseOnlyThese = div_tag)
    sections = html_divtag.find(attrs={'id' : 'explore_filter_%s' % str(filterlevel)})
+   if not sections:
+    sections = html_divtag.find(attrs={'id' : 'explore_listview'})
    if sections:
     links = sections.findAll('a')
     if len(links) > 0:
@@ -87,7 +92,7 @@ class nzonscreen:
         self.xbmcitems.items.append(item)
     self.xbmcitems.addall()
    else:
-    sys.stderr.write("index: No links")
+    sys.stderr.write("index: No sections")
   else:
    sys.stderr.write("index: No page.doc")
 
