@@ -145,7 +145,15 @@ if params:
   elif params["ch"][0] == "NZOnScreen":
    nzonscreen()
 # elif params["ch"][0] == "iSKY":
+# https://www.skytv.co.nz/skyid/rest/login?skin=isky
+# POST:
+# email
+# password
 # elif params["ch"][0] == "Quickflix":
+# https://secure.quickflix.co.nz/Partial/Secure/Standard/Login
+# POST:
+# LoginEmail
+# LoginPassword
 # elif params["ch"][0] == "IGLOO":
   elif params["ch"][0] == "Prime":
    from resources.channels.prime import prime as primeclass
@@ -156,7 +164,7 @@ else:
  #channels = ["TV3", "TVNZ", "Prime", "NZOnScreen", "Ziln"]
  channels = dict()
  channels["TV3"] = "Latest TV On Demand video from both TV3 and FOUR."
- #channels["TVNZ"] = "Ready when you are."
+ channels["TVNZ"] = "Ready when you are."
  channels["Prime"] = "Prime News: First At 5:30 brings you the top news and sports stories from New Zealand and around the world."
  channels["NZOnScreen"] = "The online showcase of New Zealand television, film and music video."
  channels["Ziln"] = "Ziln links the audience reach of broadband internet with a potentially limitless amount of targetted live streaming and View On Demand TV/video content."

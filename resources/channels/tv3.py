@@ -214,7 +214,7 @@ class tv3:
      self.xbmcitems.items.append(item)
      if len(item.urls) > 0:
       if self.prefetch:
-       self.xbmcitems.add()
+       self.xbmcitems.add(len(programs))
     if self.prefetch:
      self.xbmcitems.sort()
     else:
@@ -445,32 +445,22 @@ class tv3:
   ids = id.split(",")
   if len(ids) == 4:
    pageUrl = "%s/%s/%s/%s/%s/%s/%s/%s/%s" % (self._base_url(studio), ids[0], self.urls["video1"], ids[1], self.urls["video2"], ids[2], self.urls["video3"], ids[3], self.urls["video4"])
-   #sys.stderr.write(pageUrl)
    page = webpage(pageUrl)
   else:
-   #doc = resources.tools.gethtmlpage("id")
-   #sys.stderr.write(id)
    page = webpage(id) # Huh? - I guess this is feeding a full URL via the id variable
   if page.doc:
-   #videoid = re.search('var video ="/\*transfer\*([0-9]+)\*([0-9A-Z]+)";', doc)
-   #videoid = re.search('var video ="\*(.*?)\*([0-9]+)\*(.*?)";', page.doc)
    videoid = re.search('var video ="\*(.*?)\*([0-9A-Z\-]+)\*(.*?)";', page.doc)
-   #videoid = re.search('var video ="\*(.*?)";', page.doc)
    if videoid:
-    #videoplayer = re.search('var fo = new FlashObject\("(http://static.mediaworks.co.nz/(.*?).swf)', doc)
     videoplayer = re.search('swfobject.embedSWF\("(http://static.mediaworks.co.nz/(.*?).swf)', page.doc)
     if videoplayer:
      rnd = ""
      auth = re.search('random_num = "([0-9]+)";', page.doc)
      if auth:
       rnd = "?rnd=" + auth.group(1)
-     swfverify = ' swfUrl=%s%s pageUrl=%s swfVfy=true' % (videoplayer.group(1), rnd, pageUrl)
-     #swfverify = ' swfUrl=%s%s' % (videoplayer.group(1), rnd)
+     swfverify = ' swfVfy=true swfUrl=%s%s pageUrl=%s' % (videoplayer.group(1), rnd, pageUrl)
      realstudio = 'tv3'
      site = re.search("var pageloc='(TV-)?(.*?)-", page.doc)
      if site:
-      #if site.group(2) == 'FOUR':
-       #realstudio = 'four'
       realstudio = site.group(2).lower()
      playlist = list()
      qualities = [330]
@@ -520,19 +510,15 @@ class tv3:
    info = dict()
    aired = re.search("([0-9]{2}/[0-9]{2}/[0-9]{2})", ad.contents[1])
    if aired:
-    #info["Premiered"] = time.strftime("%Y-%m-%d", time.strptime(aired.group(1),"%d/%m/%y"))
     info["Premiered"] = tools.xbmcdate(aired.group(1))
     info["Date"] = info["Premiered"]
-    #info["Year"] = int(time.strftime("%Y", info["Aired"]))
    duration = re.search("\(([0-9]+:[0-9]{2})\)", ad.contents[1])
    if duration:
-    #info["Duration"] = duration.group(2)
     info["Duration"] = time.strftime("%M", time.strptime(duration.group(1), "%M:%S"))
    return info
 
  def _base_url(self, provider): #Build a base website URL for a given site (four or tv3)
   return "%s.%s.%s" % (self.urls['base1'], provider, self.urls['base2'])
-  #return "%s.%s.%s" % (self.urls['base1'], 'tv3', self.urls['base2'])
 
  def _rtmpchannel(self, provider):
   if provider == "four":
