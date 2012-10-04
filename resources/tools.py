@@ -289,6 +289,11 @@ class xbmcItems:
    return "stack://" + " , ".join([url.replace(',', ',,').strip() for url in urls])
   return False
 
+ def booleansetting(self, setting):  
+  if settings.getSetting(setting) == 'true':
+   return True
+  return False
+
  def message(self, message, title = "Warning"): #Show an on-screen message (useful for debugging)
   import xbmcgui
   dialog = xbmcgui.Dialog()

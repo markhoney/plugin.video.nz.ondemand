@@ -20,6 +20,10 @@
   <setting id="TVNZ_quality_choose" type="bool" label="30023" default="false" />
   <setting id="TVNZ_quality" type="labelenum" label="30010" values="High|Medium|Low" default="High" visible="eq(-1,false)" />
  </category>
+ <category label="30107">
+  <!--<setting id="ChoiceTV_hide" type="bool" label="30021" default="false" />-->
+  <setting id="ChoiceTV_prefetch" type="bool"      label="30025" default="false" />
+ </category>
  <category label="30103">
   <!--<setting id="Ziln_hide" type="bool" label="30021" default="false" />-->
   <setting id="Ziln_prefetch" type="bool"      label="30025" default="false" />
