@@ -363,7 +363,8 @@ class tv3:
   item.infodecode(encodedinfo)
   item.fanart = self.xbmcitems.fanart
   item.urls = self._geturls(id, channel)
-  self.xbmcitems.resolve(item, self.channel)
+  if item.urls:
+   self.xbmcitems.resolve(item, self.channel)
 
  def _geturls(self, id, channel): #Scrape a page for a given OnDemand video and build an RTMP URL from the info in the page, then play the URL
   urls = dict()
@@ -398,7 +399,7 @@ class tv3:
      # qualities.append(56)
      geo = re.search('var geo= "(.*?)";', page.doc)
      if geo:
-      if geo.group(1) == 'geo':
+      if geo.group(1) == 'geo' or geo.group(1) == 'geomob':
        for quality in qualities:
         urls[quality] = '%s/%s/%s/%s/%s/%s_%sK.mp4' % (self.urls["rtmp1"], self.channels[channel]['rtmp'], self.urls["rtmp2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + swfverify
       elif geo.group(1) == 'str':
@@ -407,13 +408,6 @@ class tv3:
         tcurl = ' tcUrl=rtmpe://flashcontent.mediaworks.co.nz:80/'
         playpath = ' playpath=%s/%s_%sK' % (videoid.group(2), videoid.group(3), quality)
         urls[quality] = '%s/%s/%s/%s/%s/%s_%sK' % (self.urls['news1'], "vod", self.urls["rtmp2"] + "3news", videoid.group(1), urllib.quote(videoid.group(2)), urllib.quote(videoid.group(3)), quality) + ' pageUrl=' + pageUrl
-        #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), urllib.quote(videoid.group(2)), urllib.quote(videoid.group(3)), quality) + ' pageUrl=' + pageUrl
-        #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
-        #urls[quality] = 'rtmpe://flashcontent.mediaworks.co.nz:80/tv3/mp4:transfer'
-        #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) # + " swfVfy=true swfUrl=http://m1.2mdn.net/879366/DartShellPlayer9_14_39_2.swf"
-        #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + tcurl + app + playpath + swfverify
-        #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + playpath + swfverify
-        #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + swfverify
     #  elif geo.group(1) == 'no':
     #   for quality in qualities:
     #    urls[quality] = '%s/%s/%s%s/%s/%s_%s.%s' % (self.urls["http1"], "four", self.urls["http2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality, "mp4")
