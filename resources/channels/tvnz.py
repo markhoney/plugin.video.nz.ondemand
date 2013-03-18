@@ -265,6 +265,7 @@ class tvnz:
   conn.request("POST", "/services/messagebroker/amf?playerId=" + self.urls['playerID'], str(remoting.encode(env).read()), {'content-type': 'application/x-amf'})
   resp = conn.getresponse().read()
   response = remoting.decode(resp).bodies[0][1].body
+  self._printResponse(env, response)
   return response['programmedContent']['videoPlayer']['mediaDTO']['renditions']
 
  def get_clip_info_ps3(self, contentID):
