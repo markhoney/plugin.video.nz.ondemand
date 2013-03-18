@@ -49,21 +49,20 @@ settings = config.__settings__
 def tv3():
  from resources.channels.tv3 import tv3 as tv3class
  tv3 = tv3class()
- if params.get("folder", "") != "":
-  tv3.folderindex(params["folder"][0])
- elif params.get("cat", "") != "":
-  if params["cat"][0] == "tv":
-   tv3.episodes(params["catid"][0], "tv3")
-  elif params["cat"][0] == "atoz":
-   tv3.atoz(params["catid"][0], "tv3")
-  elif params["cat"][0] == "tv3":
-   tv3.episodes(params["catid"][0], "tv3")
-  elif params["cat"][0] == "four":
-   tv3.episodes(params["catid"][0], "four")
-  elif params["cat"][0] == "shows":
-   tv3.show(urllib.unquote(params["catid"][0]), urllib.unquote(params["title"][0]), "tv3")
- elif params.get("id", "") != "":
-  tv3.play(params["id"][0], params["provider"][0], params["info"][0])
+ if params.get("channel", "") != "":
+  if params.get("cat", "") != "":
+   if params["cat"][0] == "shows":
+    tv3.shows(params["channel"][0])
+   elif params["cat"][0] == "show":
+    tv3.show(params["channel"][0], params["title"][0])
+   elif params["cat"][0] == "search":
+    tv3.search(params["channel"][0])
+   else:
+    tv3.episodes(params["channel"][0], params["cat"][0])
+  elif params.get("id", "") != "":
+   tv3.play(params["id"][0], params["channel"][0], params["info"][0])
+  else:
+   tv3.channelindex(params["channel"][0])
  else:
   if config.__settings__.getSetting('TV3_folders') == 'true':
    tv3.index()
@@ -132,6 +131,17 @@ def nzonscreen():
  else:
   nzonscreen.index()
 
+def stuff():
+ from resources.channels.stuff import stuff as stuffclass
+ stuff = stuffclass()
+ if params.get("type", "") != "":
+  stuff.index(params["type"][0], params["id"][0])
+ elif params.get("id", "") != "":
+  stuff.play(params["section"][0], params["id"][0])
+ elif params.get("section", "") != "":
+  stuff.sections(params["section"][0])
+ else:
+  stuff.index()
 
 
 # Decide what to run based on the plugin URL
@@ -152,6 +162,8 @@ if params:
    ziln()
   elif params["ch"][0] == "NZOnScreen":
    nzonscreen()
+  elif params["ch"][0] == "Stuff":
+   stuff()
 # elif params["ch"][0] == "iSKY":
 # https://www.skytv.co.nz/skyid/rest/login?skin=isky
 # POST:
@@ -171,11 +183,12 @@ if params:
 else:
  channels = dict()
  channels["TV3"] = "Latest TV On Demand video from both TV3 and FOUR."
- #channels["TVNZ"] = "Ready when you are."
+ channels["TVNZ"] = "Ready when you are."
  channels["Prime"] = "Prime News: First At 5:30 brings you the top news and sports stories from New Zealand and around the world."
  channels["NZOnScreen"] = "The online showcase of New Zealand television, film and music video."
  channels["Ziln"] = "Ziln links the audience reach of broadband internet with a potentially limitless amount of targetted live streaming and View On Demand TV/video content."
  channels["ChoiceTV"] = "Choice TV's programming centres on entertainment, information and lifestyle content from around the world."
+ channels["Stuff"] = "Stuff covers every aspect of news and information, from breaking national and international crises through to in-depth features, sports, business, entertainment and technology articles, weather reports, travel services, movie reviews, rural news... and lots more."
  xbmcitems = tools.xbmcItems()
  for channel, description in channels.iteritems():
   if not settings.getSetting('%s_hide' % channel) == "true":

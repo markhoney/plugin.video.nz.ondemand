@@ -16,9 +16,7 @@ class ziln:
   self.urls["rtmp2"] = 'ecast'
   self.urls["rtmp3"] = 'mp4:/ziln'
   self.xbmcitems = tools.xbmcItems(self.channel)
-  self.prefetch = False
-  if settings.getSetting('%s_prefetch' % self.channel) == 'true':
-   self.prefetch = True
+  self.prefetch = self.xbmcitems.booleansetting('%s_prefetch' % self.channel)
 
 
  def index(self):

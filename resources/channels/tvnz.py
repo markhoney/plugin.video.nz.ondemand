@@ -42,13 +42,11 @@ class tvnz:
   #self.urls['swfUrl_PS3'] = 'http://c.brightcove.com/services/viewer/federated_f9?&playerWidth=640&playerHeight=512&dynamicStreaming=true&isSlim=true&playerKey=AQ%7E%7E%2CAAAA4FQHurk%7E%2Cl-y-mylVvQmMeQArl3N6WrFttyxCZNYX&playerID=1257248093001&videoSmoothing=true&isSlim=1?smoothing=true'
   #self.urls['swfUrl_PS3'] = 'http://tvnz.co.nz/stylesheets/ps3/entertainment/flash/ps3Flash.swf'
 
-  self.PS3 = True
+  self.PS3 = False
   self.IOS = True
   self.bitrate_min = 400000
   self.xbmcitems = tools.xbmcItems(self.channel)
-  self.prefetch = False
-  if settings.getSetting('%s_prefetch' % self.channel) == 'true':
-   self.prefetch = True
+  self.prefetch = self.xbmcitems.booleansetting('%s_prefetch' % self.channel)
 
  def url(self, folder):
   u = self.urls
@@ -196,7 +194,7 @@ class tvnz:
    item.info["Title"] = " ".join((title, sxe, subtitle)) #subtitle
    item.info["Thumb"] = ep.attributes["src"].value
    if self.prefetch:
-    item.urls = self._geturls(link)
+    item.urls = self._geturls(link, item.info["Thumb"])
    else:
     item.playable = True
     item.info["FileName"] = "%s?ch=%s&id=%s&info=%s" % (self.base, self.channel, link, item.infoencode())
@@ -208,10 +206,10 @@ class tvnz:
   item = tools.xbmcItem()
   item.infodecode(encodedinfo)
   item.fanart = self.xbmcitems.fanart
-  item.urls = self._geturls(id)
+  item.urls = self._geturls(id, item.info["Thumb"])
   self.xbmcitems.resolve(item, self.channel)
 
- def _geturls(self, id):
+ def _geturls(self, id, thumb):
   urls = dict()
   if self.PS3:
    rtmpdata = self.get_clip_info_ps3(int(id))
@@ -222,9 +220,16 @@ class tvnz:
     else:
      urls[rendition["encodingRate"]] = rendition["defaultURL"] + ' swfVfy=true swfUrl=' + self.urls['swfUrl_PS3']
   else:
-   rtmpdata = self.get_clip_info(int(id), 'http://tvnz.co.nz/beyond-the-darklands/s5-ep4-video-5091613')
-   for rendition in rtmpdata:
-    urls[rendition["encodingRate"]] = rendition["defaultURL"] + ' swfUrl=' + self.urls['swfUrl_PS3']
+   #url = '%s/%s/%s' % (self.urls['base'], self.urls['content'], str(id) + '.xhtml')
+   print thumb
+   urlinfo = re.search('http://images.tvnz.co.nz/tvnz_images/(.*?)/[0-9]+/[0-9]+/(.*?)_E3.jpg', thumb)
+   if urlinfo:
+    url = '%s/%s/%s' % (self.urls['base'], urlinfo.group(1).replace("_", "-"), urlinfo.group(2)[len(urlinfo.group(1)) + 1:].replace("_", "-") + "-video-" + id)
+    print url
+    rtmpdata = self.get_clip_info(int(id), url)
+    if rtmpdata:
+     for rendition in rtmpdata:
+      urls[rendition["encodingRate"]] = rendition["defaultURL"] + ' swfUrl=' + self.urls['swfUrl_PS3']
   return urls
 
  def _printResponse(self, env, response):

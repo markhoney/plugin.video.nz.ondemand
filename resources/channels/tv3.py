@@ -8,13 +8,25 @@ from BeautifulSoup import BeautifulSoup, SoupStrainer
 import resources.tools as tools
 import resources.config as config
 settings = config.__settings__
+language = config.__language__
 from resources.tools import webpage
 
 class tv3:
  def __init__(self):
   self.base = sys.argv[0]
   self.channel = "TV3"
+  self.channels = {"TV3": dict(), "Four": dict()}
+  self.channels['TV3']['base'] = 'http://www.tv3.co.nz'
+  self.channels['TV3']['ondemand'] = 'OnDemand'
+  self.channels['TV3']['shows'] = 'Shows'
+  self.channels['TV3']['rtmp'] = 'tv3'
+  self.channels['Four']['base'] = 'http://www.four.co.nz'
+  self.channels['Four']['ondemand'] = 'TV/OnDemand'
+  self.channels['Four']['shows'] = 'TV/Shows'
+  self.channels['Four']['rtmp'] = 'c4'
   self.urls = dict()
+  self.urls['categories'] = ['Must Watch', 'Expiring Soon', 'Recently Added']
+  # TitleAZ
   self.urls['base'] = 'http://www.tv3.co.nz'
   self.urls['base1'] = 'http://ondemand'
   self.urls['base2'] = 'co.nz'
@@ -34,122 +46,68 @@ class tv3:
   self.urls['img_re'] = '\.ondemand\.tv3\.co\.nz/ondemand/AM/'
   self.urls['img_re2'] = '\.ondemand\.tv3\.co\.nz/Portals/0-Articles/'
   self.xbmcitems = tools.xbmcItems(self.channel)
-  self.prefetch = False
-  if settings.getSetting('%s_prefetch' % self.channel) == 'true':
-   self.prefetch = True
+  self.prefetch = self.xbmcitems.booleansetting('%s_prefetch' % self.channel)
 
  def index(self, fake = True):
-  if fake:
-   self._indexfake()
-  else:
-   self._indexreal()
-  self.xbmcitems.addall()
-
-
- def _indexfake(self): #Create a list of top level folders for the hierarchy view
-  folders = list()
-  folders.append(config.__language__(30052)) # "Categories"
-  folders.append(config.__language__(30053)) # "Channels"
-  folders.append(config.__language__(30054)) # "Genres"
-  #folders.append(config.__language__(30055)) # "Shows"
-  folders.append(config.__language__(30065)) # "Search"
-  count = len(folders)
-  for folder in folders:
+  for folder in self.channels.keys():
    item = tools.xbmcItem()
    item.info["Title"] = folder
-   item.info["FileName"] = "%s?ch=TV3&folder=%s" % (self.base, folder)
+   item.info["FileName"] = "%s?ch=TV3&channel=%s" % (self.base, folder)
    self.xbmcitems.items.append(item)
-
- def _indexreal(provider): #Create a list of top level folders as scraped from TV3's website
-  page = webpage("%s/tabid/56/default.aspx" % (self._base_url(provider)))
-  if page.doc:
-   a_tag = SoupStrainer('a')
-   html_atag = BeautifulSoup(page.doc, parseOnlyThese = a_tag)
-   links = html_atag.findAll(attrs={"rel": "nofollow", "href": re.compile(self.urls["cat_re"])}) #, "title": True
-   if len(links) > 0:
-    for link in links:
-     item = tools.xbmcItem()
-     item.info["Title"] = link.string
-     caturl = link['href']
-     cat = "tv"
-     if item.info["Title"] in {"Title (A - Z)": "atoz", "TV3 Shows": "tv3", "FOUR Shows": "four"}:
-      cat = cats[item.info["Title"]]
-     catid = re.search('%s([0-9]+)' % (self.urls["cat_re"]), caturl).group(1)
-     if catid:
-      item.info["FileName"] = "%s?ch=TV3&cat=%s&catid=%s" % (self.base, cat, catid)
-      self.xbmcitems.items.append(item)
-   else:
-    sys.stderr.write("Couldn't find any categories")
-  else:
-   sys.stderr.write("Couldn't get index webpage")
-
- def folderindex(self, folder): #Create second level folder for the hierarchy view, only showing items for the selected top level folder
-  infopages = list()
-  infopages.append(("63", config.__language__(30052), "tv3", config.__language__(30056))) # Latest
-  infopages.append(("61", config.__language__(30052), "tv3", config.__language__(30057))) # Most Watched
-  infopages.append(("64", config.__language__(30052), "tv3", config.__language__(30058))) # Expiring soon
-  #infopages.append(("70", config.__language__(30052), "atoz", "A - Z")) # Now empty
-  infopages.append(("71", config.__language__(30053), "tv3", "TV3"))
-  infopages.append(("72", config.__language__(30053), "four", "FOUR"))
-  infopages.append(("65", config.__language__(30054), "tv3", config.__language__(30059))) # Comedy
-  infopages.append(("66", config.__language__(30054), "tv3", config.__language__(30060))) # Drama
-  infopages.append(("67", config.__language__(30054), "tv3", config.__language__(30061))) # News/Current affairs
-  infopages.append(("68", config.__language__(30054), "tv3", config.__language__(30062))) # Reality
-  infopages.append(("82", config.__language__(30054), "tv3", config.__language__(30063))) # Sports
-  infopages.append(("80", config.__language__(30052), "tv3", config.__language__(30064))) # All
-  #infopages.append(("74", "RSS", "tv3", "RSS Feeds"))
-  #infopages.append(("81", "Categories", "tv3", "FOUR Highlights"))
-  #infopages.append(("73", "Categories", "tv3", "All (Small)"))
-  for page in infopages:
-   if page[1] == folder:
-    item = tools.xbmcItem()
-    item.info["Title"] = page[3]
-    item.info["FileName"] = "%s?ch=TV3&cat=%s&catid=%s" % (self.base, page[2], page[0])
-    self.xbmcitems.items.append(item)
-  if folder == "Shows":
-   self.shows("tv3")
-  elif folder == "Search":
-   self.search()
   self.xbmcitems.addall()
 
- def showsindex(provider): #Create a second level list of TV Shows from a TV3 webpage
+ def channelindex(self, channel): #Create second level folder for the hierarchy view, only showing items for the selected top level folder
+  for category in self.urls['categories']:
+   item = tools.xbmcItem()
+   item.info["Title"] = category
+   item.info["FileName"] = "%s?ch=TV3&channel=%s&cat=%s" % (self.base, channel, category.replace(" ", ""))
+   self.xbmcitems.items.append(item)
+  item = tools.xbmcItem()
+  item.info["Title"] = language(30055)
+  item.info["FileName"] = "%s?ch=TV3&channel=%s&cat=%s" % (self.base, channel, "shows")
+  self.xbmcitems.items.append(item)
+  item = tools.xbmcItem()
+  item.info["Title"] = language(30065)
+  item.info["FileName"] = "%s?ch=TV3&channel=%s&cat=%s" % (self.base, channel, "search")
+  self.xbmcitems.items.append(item)
+  self.xbmcitems.addall()
+
+ def shows(self, channel): #Create a second level list of TV Shows from a TV3 webpage
   #doc = resources.tools.gethtmlpage("%s/Shows/tabid/64/Default.aspx" % ("http://www.tv3.co.nz")) #Get our HTML page with a list of video categories
   #doc = resources.tools.gethtmlpage("%s/Shows.aspx" % ("http://www.tv3.co.nz")) #Get our HTML page with a list of video categories
-  page = webpage("%s/Shows.aspx" % ("http://www.tv3.co.nz"))
+  page = webpage("%s/%s/%s" % (self.channels[channel]['base'], self.channels[channel]['ondemand'], "TitleAZ.aspx"))
   if page.doc:
    html_divtag = BeautifulSoup(page.doc)
-   linksdiv = html_divtag.find('div', attrs = {"id": "pw_8171"})
-   if linksdiv:
-    links = linksdiv.findAll('a')
-    if len(links) > 0:
-     count = 0
-     for link in links:
-      item = tools.xbmcItem()
-      item.info["Title"] = link.string.strip()
-      catid = link['href']
-      if item.info["Title"] == "60 Minutes": #The URL on the next line has more videos
-       item.info["FileName"] = "%s?ch=TV3&cat=%s&title=%s&catid=%s" % (self.base, "shows", urllib.quote(item.info["Title"]), urllib.quote(catid)) #"http://ondemand.tv3.co.nz/Default.aspx?TabId=80&cat=22"
-      else:
-       item.info["FileName"] = "%s?ch=TV3&cat=%s&title=%s&catid=%s" % (self.base, "shows", urllib.quote(item.info["Title"]), urllib.quote(catid))
-      self.xbmcitems.items.append(item)
-     self.xbmcitems.addall()
-    else:
-     sys.stderr.write("showsindex: Couldn't find any videos in list")
+   showsdiv = html_divtag.findAll('div', attrs = {"class": "grid_2"})
+   if len(showsdiv) > 0:
+    for show in showsdiv:
+     item = tools.xbmcItem()
+     title = show.find('p').find('a')
+     if title:
+      if title.string:
+       if title['href'][len('http://www.'):len('http://www.') + 3] == channel[0:3].lower():
+        item.info["Title"] = title.string.strip()
+        image = show.find("img")
+        if image:
+         item.info["Thumb"] = image['src']
+        item.info["FileName"] = "%s?ch=TV3&channel=%s&cat=%s&title=%s" % (self.base, channel, "show", urllib.quote(item.info["Title"].replace(" ", "")))
+        self.xbmcitems.items.append(item)
+    self.xbmcitems.addall()
    else:
-    sys.stderr.write("showsindex: Couldn't find video list")
+    sys.stderr.write("showsindex: Couldn't find any videos in list")
   else:
    sys.stderr.write("showsindex: Couldn't get index webpage")
 
 
- def episodes(self, catid, provider): #Show video items from a normal TV3 webpage
-  page = webpage("%s%s%s" % (self._base_url("tv3"), self.urls['cat'], catid))
+ def episodes(self, channel, cat): #Show video items from a normal TV3 webpage
+  page = webpage("%s/%s/%s" % (self.channels[channel]['base'], self.channels[channel]['ondemand'], cat + ".aspx"))
   if page.doc:
    a_tag=SoupStrainer('div')
    html_atag = BeautifulSoup(page.doc, parseOnlyThese = a_tag)
-   programs = html_atag.findAll(attrs={"class": "latestArticle "})
+   programs = html_atag.findAll(attrs={"class": "grid_2"})
    if len(programs) > 0:
     for soup in programs:
-     item = self._itemdiv(soup, provider)
+     item = self._itemdiv(soup, channel)
      if item:
       self.xbmcitems.items.append(item)
       if len(item.urls) > 0:
@@ -164,35 +122,21 @@ class tv3:
   else:
    sys.stderr.write("episodes: Couldn't get videos webpage")
 
- def show(self, catid, title, provider): #Show video items from a TV Show style TV3 webpage
-  baseurl = ""
-  if catid[:4] != "http":
-   baseurl = self.urls["base"]
-  geturl = "%s%s" % (baseurl, catid)
-  page = webpage(geturl)
+ def show(self, channel, title): #Show video items from a TV Show style TV3 webpage
+  #page = webpage("%s/%s/%s" % (self.channels[channel]['base'], self.channels[channel]['shows'], title + ".aspx"))
+  page = webpage("%s/%s/%s/%s" % (self.channels[channel]['base'], self.channels[channel]['shows'], title, "TVOnDemand.aspx"))
   if page.doc:
    div_tag = SoupStrainer('div')
    html_divtag = BeautifulSoup(page.doc, parseOnlyThese = div_tag)
-   tables = html_divtag.find(attrs={"xmlns:msxsl": "urn:schemas-microsoft-com:xslt"})
-   if tables:
-    programs = tables.findAll('table')
+   programblock = html_divtag.find(attrs={"class": "grid_8"})
+   if programblock:
+    #print programblock
+    programs = programblock.findAll('div', attrs={"class": "grid_4"})
     if len(programs) > 0:
-     count = 0
      for soup in programs:
-      self.xbmcitems.items.append(self._itemshow(soup, provider, title))
-      count += 1
+      print soup
+      self.xbmcitems.items.append(self._itemshow(channel, title, soup))
      self.xbmcitems.addall()
-    else:
-     programs = tables.findAll('tr')
-     if len(programs) > 0:
-      count = -1
-      for soup in programs:
-       count += 1
-       if count > 0:
-        self.xbmcitems.items.append(self._itemtable(soup, provider, title))
-      self.xbmcitems.addall()
-     else:
-      sys.stderr.write("show: Couldn't find any videos in list")
    else:
     sys.stderr.write("show: Couldn't find video list")
   else:
@@ -271,37 +215,31 @@ class tv3:
   else:
    sys.stderr.write("_itemsearch: No title")
 
- def _itemdiv(self, soup, provider): #Scrape items from a div-style HTML page
-  baseurl = self._base_url(provider)
+ def _itemdiv(self, soup, channel): #Scrape items from a div-style HTML page
+  baseurl = self.channels[channel]['base']
   item = tools.xbmcItem()
   #item.info["Studio"] = provider
-  link = soup.find("a", attrs={"href": re.compile(baseurl)})
+  link = soup.find("a")
   if link:
    href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["video1"], self.urls["video2"], self.urls["video3"]), link['href'])
    if href:
-    if link.string:
-     title = link.string.strip()
-     if title != "" and title[0:7] != "rotator":
+    showname = soup.find("div")
+    if showname:
+     title = showname.string.strip()
+     if title != "":
       item.info["TVShowTitle"] = title
-      image = soup.find("img", attrs={"src": re.compile(self.urls["img_re"]), "title": True})
+      image = soup.find("img")
       if image:
        item.info["Thumb"] = image['src']
-      se = soup.find("span", attrs={"class": "title"})
+      se = soup.find("p")
       if se:
        item.info.update(self._seasonepisode(se))
-      date = soup.find("span", attrs={"class": "dateAdded"})
-      if date:
-       item.info.update(self._dateduration(date))
       item.titleplot()
-      plot = soup.find("div", attrs={"class": "left"}).string
-      if plot:
-       if plot.strip() != "":
-        item.info["Plot"] = item.unescape(plot.strip())
       if self.prefetch:
-       item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
+       item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), channel)
       else:
        item.playable = True
-       item.info["FileName"] = "%s?ch=TV3&id=%s&provider=%s&info=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
+       item.info["FileName"] = "%s?ch=TV3&channel=%s&id=%s&info=%s" % (self.base, channel, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), item.infoencode())
       return item
      else:
       sys.stderr.write("_itemdiv: No title")
@@ -312,51 +250,45 @@ class tv3:
   else:
    sys.stderr.write("_itemdiv: No link")
 
- def _itemshow(self, soup, provider, title): #Scrape items from a show-style HTML page
+ def _itemshow(self, channel, title, soup): #Scrape items from a show-style HTML page
+  baseurl = self.channels[channel]['base']
   item = tools.xbmcItem()
-  bold = soup.find('b')
-  if bold:
-   link = bold.find("a", attrs={"href": re.compile(self.urls["feedburner_re"])})
-   if link:
-    urltype = "other"
-   else:
-    link = bold.find("a", attrs={"href": re.compile(self._base_url("tv3"))})
-    if link:
-     urltype = "tv3"
-   if link:
-    if link.string:
-     plot = link.string.strip()
-     if plot != "":
-      item.info["PlotOutline"] = plot
+  link = soup.find("a")
+  if link:
+   print link
+   if link.has_key('href'):
+    print link['href']
+    print "%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["video1"], self.urls["video2"], self.urls["video3"])
+    href = re.match("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (baseurl, self.urls["video1"], self.urls["video2"], self.urls["video3"]), link['href'])
+    if href:
+     title = showname.strip()
+     if title != "":
       item.info["TVShowTitle"] = title
-      image = soup.find("img", attrs={"src": re.compile(self.urls["img_re"])})
+      image = soup.find("img")
       if image:
        item.info["Thumb"] = image['src']
-      item.info.update(self._seasonepisode(link))
+      se = soup.find("h4")
+      if se:
+       sea = se.find('a')
+       if sea:
+        item.info.update(self._seasonepisode(sea).string.strip())
+      plot = soup.find("p")
+      if plot:
+       if plot.string:
+        item.info["PlotOutline"] = plot.string.strip()
       item.titleplot()
-      if urltype == "tv3":
-       href = re.search("%s/(.*?)/%s/([0-9]+)/%s/([0-9]+)/%s/([0-9]+)/" % (self._base_url("tv3"), self.urls["video1"], self.urls["video2"], self.urls["video3"]), link['href'])
-       if href:
-        if self.prefetch:
-         item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
-        else:
-         item.playable = True
-         item.info["FileName"] = "%s?ch=TV3&id=%s&provider=%s&info=%s" % (self.base, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
-      elif urltype == "other":
-       if self.prefetch:
-        item.urls = self._geturls(link["href"], provider)
-       else:
-        item.playable = True
-        item.info["FileName"] = "%s?ch=TV3&id=%s&provider=%s&info=%s" % (self.base, urllib.quote(link["href"]), provider, item.infoencode())
+      if self.prefetch:
+       item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), channel)
+      else:
+       item.playable = True
+       item.info["FileName"] = "%s?ch=TV3&channel=%s&id=%s&info=%s" % (self.base, channel, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), item.infoencode())
       return item
-     else:
-      sys.stderr.write("_itemshow: No plot")
     else:
-     sys.stderr.write("_itemshow: No link.string")
+     sys.stderr.write("_itemshow: No title")
    else:
-    sys.stderr.write("_itemshow: No link")
+    sys.stderr.write("_itemshow: No href")
   else:
-   sys.stderr.write("_itemshow: No bold")
+   sys.stderr.write("_itemshow: No link")
 
  def _itemtable(self, soup, provider, title): #Scrape items from a table-style HTML page
   item = tools.xbmcItem()
@@ -408,7 +340,7 @@ class tv3:
         if cleanedplot:
          item.info["Plot"] = item.unescape(cleanedplot)
        if self.prefetch:
-        item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider)
+        item.urls = self._geturls("%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), channel)
        else:
         item.playable = True
         item.info["FileName"] = "%s?ch=%s&id=%s&provider=%s&info=%s" % (self.base, self.channel, "%s,%s,%s,%s" % (href.group(1), href.group(2), href.group(3), href.group(4)), provider, item.infoencode())
@@ -425,69 +357,70 @@ class tv3:
   else:
    sys.stderr.write("_itematoz: No h5")
 
- def play(self, id, studio, encodedinfo):
+ def play(self, id, channel, encodedinfo):
   item = tools.xbmcItem()
   item.infodecode(encodedinfo)
   item.fanart = self.xbmcitems.fanart
-  item.urls = self._geturls(id, studio)
+  item.urls = self._geturls(id, channel)
   self.xbmcitems.resolve(item, self.channel)
 
- def _geturls(self, id, studio): #Scrape a page for a given OnDemand video and build an RTMP URL from the info in the page, then play the URL
+ def _geturls(self, id, channel): #Scrape a page for a given OnDemand video and build an RTMP URL from the info in the page, then play the URL
   urls = dict()
   ids = id.split(",")
   if len(ids) == 4:
-   pageUrl = "%s/%s/%s/%s/%s/%s/%s/%s/%s" % (self._base_url(studio), ids[0], self.urls["video1"], ids[1], self.urls["video2"], ids[2], self.urls["video3"], ids[3], self.urls["video4"])
+   pageUrl = "%s/%s/%s/%s/%s/%s/%s/%s/%s" % (self.channels[channel]['base'], ids[0], self.urls["video1"], ids[1], self.urls["video2"], ids[2], self.urls["video3"], ids[3], self.urls["video4"])
    page = webpage(pageUrl)
   else:
    page = webpage(id) # Huh? - I guess this is feeding a full URL via the id variable
   if page.doc:
-   videoid = re.search('var video ="\*(.*?)\*([0-9A-Z\-]+)\*(.*?)";', page.doc)
+   videoid = re.search('var video ="/(.*?)/([0-9A-Z\-]+)/(.*?)";', page.doc)
    if videoid:
-    videoplayer = re.search('swfobject.embedSWF\("(http://static.mediaworks.co.nz/(.*?).swf)', page.doc)
+    #videoplayer = re.search('swfobject.embedSWF\("(http://static.mediaworks.co.nz/(.*?).swf)', page.doc)
+    videoplayer = 'http://static.mediaworks.co.nz/video/jw/5.10/df.swf'
     if videoplayer:
      rnd = ""
      auth = re.search('random_num = "([0-9]+)";', page.doc)
      if auth:
       rnd = "?rnd=" + auth.group(1)
-     swfverify = ' swfVfy=true swfUrl=%s%s pageUrl=%s' % (videoplayer.group(1), rnd, pageUrl)
+     swfverify = ' swfVfy=true swfUrl=%s%s pageUrl=%s' % (videoplayer, rnd, pageUrl)
      realstudio = 'tv3'
      site = re.search("var pageloc='(TV-)?(.*?)-", page.doc)
      if site:
       realstudio = site.group(2).lower()
      playlist = list()
      qualities = [330]
-     if re.search('flashvars.sevenHundred = "yes";', page.doc):
-      qualities.append(700)
-     if re.search('flashvars.fifteenHundred = "yes";', page.doc):
-      qualities.append(1500)
-     if not re.search('flashvars.highEnd = "true";', page.doc): # flashvars.highEnd = "true";//true removes 56K option
-      qualities.append(56)
-     geo = re.search('var geo= "(.*?)";', page.doc)
-     if geo:
-      if geo.group(1) == 'geo':
-       for quality in qualities:
-        urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["rtmp1"], self._rtmpchannel(realstudio), self.urls["rtmp2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + swfverify
-      elif geo.group(1) == 'str':
-       for quality in qualities:
+     #if re.search('flashvars.sevenHundred = "yes";', page.doc):
+     qualities.append(700)
+     #if re.search('flashvars.fifteenHundred = "yes";', page.doc):
+     #qualities.append(1500)
+     #if not re.search('flashvars.highEnd = "true";', page.doc): # flashvars.highEnd = "true";//true removes 56K option
+     # qualities.append(56)
+     #geo = re.search('var geo= "(.*?)";', page.doc)
+     #if geo:
+     # if geo.group(1) == 'geo':
+     for quality in qualities:
+      urls[quality] = '%s/%s/%s/%s/%s/%s_%sK.mp4' % (self.urls["rtmp1"], self.channels[channel]['rtmp'], self.urls["rtmp2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + swfverify
+     # elif geo.group(1) == 'str':
+     #  for quality in qualities:
         #app = ' app=tv3/mp4:transfer' # + videoid.group(1)
         #tcurl = ' tcUrl=rtmpe://flashcontent.mediaworks.co.nz:80/'
         #playpath = ' playpath=%s/%s_%sK' % (videoid.group(2), videoid.group(3), quality)
-        urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), urllib.quote(videoid.group(2)), urllib.quote(videoid.group(3)), quality) + ' pageUrl=' + pageUrl
+    #    urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), urllib.quote(videoid.group(2)), urllib.quote(videoid.group(3)), quality) + ' pageUrl=' + pageUrl
         #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality)
         #urls[quality] = 'rtmpe://flashcontent.mediaworks.co.nz:80/tv3/mp4:transfer'
         #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) # + " swfVfy=true swfUrl=http://m1.2mdn.net/879366/DartShellPlayer9_14_39_2.swf"
         #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + tcurl + app + playpath + swfverify
         #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + playpath + swfverify
         #urls[quality] = '%s/%s/%s%s/%s/%s_%sK' % (self.urls["flash1"], self._rtmpchannel(realstudio), self.urls["flash2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality) + swfverify
-      elif geo.group(1) == 'no':
-       for quality in qualities:
-        urls[quality] = '%s/%s/%s%s/%s/%s_%s.%s' % (self.urls["http1"], "four", self.urls["http2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality, "mp4")
+    #  elif geo.group(1) == 'no':
+    #   for quality in qualities:
+    #    urls[quality] = '%s/%s/%s%s/%s/%s_%s.%s' % (self.urls["http1"], "four", self.urls["http2"], videoid.group(1), videoid.group(2), urllib.quote(videoid.group(3)), quality, "mp4")
     else:
-     sys.stderr.write("_geturls: No page.doc")
+     sys.stderr.write("_geturls: No videoplayer")
    else:
     sys.stderr.write("_geturls: No videoid")
   else:
-   sys.stderr.write("_geturls: No videoplayer")
+   sys.stderr.write("_geturls: No page.doc")
   return urls
 
  def _seasonepisode(self, se): #Search a tag for season and episode numbers. If there's an episode and no season, assume that it's season 1
