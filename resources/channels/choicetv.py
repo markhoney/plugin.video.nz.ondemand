@@ -51,7 +51,9 @@ class choicetv:
  def _geturl(self, id):
   page = webpage('/'.join([self.urls['base'], self.urls['media'], 'view', id]))
   if page.doc:
-   link = re.search("'file': 'http(.*?)'", page.doc)
+   for link in re.finditer("'file': 'http(.*?)'", page.doc):
+    pass
+   #link = re.search("'file': 'http(.*?)'", page.doc)
    if link:
     return 'http' + link.group(1)
    else:
